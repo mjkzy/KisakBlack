@@ -2834,6 +2834,12 @@ void __cdecl FS_Flush(int f)
 
 void __cdecl Com_GetBspFilename(char *filename, unsigned int size, const char *mapname)
 {
-    Com_sprintf(filename, size, "maps/mp/%s.d3dbsp", mapname);
+    std::string name = mapname;
+    auto fmt = "maps/%s.d3dbsp";
+    if (name.starts_with("mp_"))
+    {
+        fmt = "maps/mp/%s.d3dbsp";
+    }
+    Com_sprintf(filename, size, fmt, mapname);
 }
 

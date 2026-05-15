@@ -21,6 +21,8 @@ void __cdecl CCS_ValidateChecksums(int serverChecksum, int clientChecksum)
     bool bOnlinegame; // [esp+12h] [ebp-2h]
     bool bSystemlink; // [esp+13h] [ebp-1h]
 
+    return;
+
     bSystemlink = Com_GameMode_IsGameMode(GAMEMODE_SYSTEMLINK);
     bOnlinegame = Com_GameMode_IsOnlineGame();
     if ( serverChecksum || !clientChecksum )

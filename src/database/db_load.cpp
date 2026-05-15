@@ -9161,9 +9161,9 @@ void __cdecl Load_XAssetHeader(bool atStreamStart)
             Load_ComWorldPtr(atStreamStart);
             break;
         case 14:
-            varGameWorldSpPtr = (GameWorldSp **)varXAssetHeader;
-            Load_GameWorldSpPtr(atStreamStart);
-            break;
+            //varGameWorldSpPtr = (GameWorldSp **)varXAssetHeader;
+            //Load_GameWorldSpPtr(atStreamStart);
+            //break;
         case 15:
             varGameWorldMpPtr = (GameWorldMp **)varXAssetHeader;
             Load_GameWorldMpPtr(atStreamStart);

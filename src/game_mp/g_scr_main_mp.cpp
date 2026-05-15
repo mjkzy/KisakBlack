@@ -270,7 +270,7 @@ void __cdecl    GScr_LoadScripts(scriptInstance_t inst)
         1);
     GScr_LoadDogAnimScripts(inst);
 
-    GScr_SetScriptsForPathNodes();
+    //GScr_SetScriptsForPathNodes();
     GScr_LoadPreGameScript();
     GScr_LoadGameTypeScript();
     GScr_LoadLevelScript();

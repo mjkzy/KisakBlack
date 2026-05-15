@@ -419,6 +419,8 @@ void __cdecl SV_MapRotate_f()
     parseInfo_t *tokenb; // [esp+0h] [ebp-4h]
     parseInfo_t *tokenc; // [esp+0h] [ebp-4h]
 
+    return;
+
     Com_Printf(0, "\n\nmap_rotate...\n\n");
     LicenseType = SV_GetLicenseType();
     if ( SV_IsServerRanked(LicenseType) )

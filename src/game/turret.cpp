@@ -2849,11 +2849,13 @@ void __cdecl G_SpawnTurret(gentity_s *self, const char *weaponinfoname, SpawnVar
 
 void __cdecl SP_turret(gentity_s *self, SpawnVar *spawnVar)
 {
+    /*
     const char *weaponinfoname; // [esp+0h] [ebp-4h] BYREF
 
     if ( !G_SpawnString(spawnVar, "weaponinfo", "", &weaponinfoname) )
         Com_Error(ERR_DROP, "no weaponinfo specified for turret");
     G_SpawnTurret(self, weaponinfoname, spawnVar);
+    */
 }
 
 void __cdecl Turret_SetTurretCarried(gentity_s *self, int carried)

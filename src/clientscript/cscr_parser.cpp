@@ -1202,8 +1202,7 @@ char *__cdecl Scr_ReadFile_FastFile(
     }
     else
     {
-        Scr_AddSourceBufferInternal(inst, extFilename, codePos, 0, -1, 1, archive);
-        return 0;
+        return Scr_ReadFile_LoadObj(inst, filename, (char *)extFilename, codePos, archive);
     }
 }
 
