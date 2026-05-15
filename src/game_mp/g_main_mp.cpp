@@ -699,7 +699,7 @@ void __cdecl    G_InitGame(int levelTime, int randomSeed, int restart, int regis
     PROF_SCOPED("G_InitGame");
 
     Com_Printf(15, "------- Game Initialization -------\n");
-    Com_Printf(15, "gamename: %s\n", "Call of Duty�");
+    Com_Printf(15, "gamename: %s\n", "Call of Duty®");
     Com_Printf(15, "gamedate: %s\n", "Nov    5 2010");
     Rope_InitRopes();
     Swap_Init();
