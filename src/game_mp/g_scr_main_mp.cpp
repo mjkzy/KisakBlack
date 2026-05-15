@@ -1,5 +1,6 @@
 #include "g_scr_main_mp.h"
 #include <clientscript/cscr_vm.h>
+#include <clientscript/cscr_parser.h>
 #include "g_main_mp.h"
 #include <cgame/cg_scr_main.h>
 #include "g_spawn_mp.h"
@@ -33,6 +34,7 @@
 #include <universal/surfaceflags.h>
 #include <universal/com_math_anglevectors.h>
 #include <cstring>
+#include <vector>
 #include <bgame/bg_misc.h>
 #include <database/db_assetnames.h>
 #include <glass/glass_server.h>
@@ -274,10 +276,77 @@ void __cdecl    GScr_LoadScripts(scriptInstance_t inst)
     GScr_LoadPreGameScript();
     GScr_LoadGameTypeScript();
     GScr_LoadLevelScript();
+    GScr_LoadScriptsFromDisk();
     Scr_PostCompileScripts(inst);
     GScr_PostLoadScripts(inst);
 
     Scr_EndLoadScripts(inst);
+}
+
+static std::vector<int> g_diskScriptMainHandles;
+static std::vector<int> g_diskScriptInitHandles;
+
+void __cdecl GScr_LoadScriptsFromDisk()
+{
+    g_diskScriptMainHandles.clear();
+    g_diskScriptInitHandles.clear();
+
+    if ( !g_loadScripts || !g_loadScripts->current.enabled )
+        return;
+
+    int numFiles;
+    const char **files = FS_ListFiles("scripts", (char *)"gsc", FS_LIST_ALL, &numFiles);
+    if ( !files )
+        return;
+
+    // this lets Scr_ReadFile read the script from disk so Scr_LoadScript returns true
+    g_loadScriptFromDisk = true;
+
+    for ( int i = 0; i < numFiles; ++i )
+    {
+        int nameLen = strlen(files[i]);
+        if ( nameLen <= 4 )
+            continue;
+
+        char filename[64];
+        Com_sprintf(filename, sizeof(filename), "scripts/%s", files[i]);
+        filename[nameLen + 4] = '\0'; // remove .gsc at end of name because Scr_LoadScript will add it
+
+        if ( !Scr_LoadScript(SCRIPTINSTANCE_SERVER, filename) )
+            continue;
+
+        // the main handle is loaded before the game's GSC
+        int handle = Scr_GetFunctionHandle(SCRIPTINSTANCE_SERVER, filename, "main");
+        if (handle)
+            g_diskScriptMainHandles.push_back(handle);
+
+        // the init handle is loaded after the game's GSC
+        handle = Scr_GetFunctionHandle(SCRIPTINSTANCE_SERVER, filename, "init");
+        if (handle)
+            g_diskScriptInitHandles.push_back(handle);
+    }
+
+    g_loadScriptFromDisk = false;
+
+    FS_FreeFileList(files);
+}
+
+void __cdecl GScr_ExecDiskScriptMains()
+{
+    for ( int handle : g_diskScriptMainHandles )
+    {
+        unsigned __int16 t = Scr_ExecThread(SCRIPTINSTANCE_SERVER, handle, 0);
+        Scr_FreeThread(t, SCRIPTINSTANCE_SERVER);
+    }
+}
+
+void __cdecl GScr_ExecDiskScriptInits()
+{
+    for ( int handle : g_diskScriptInitHandles )
+    {
+        unsigned __int16 t = Scr_ExecThread(SCRIPTINSTANCE_SERVER, handle, 0);
+        Scr_FreeThread(t, SCRIPTINSTANCE_SERVER);
+    }
 }
 
 void __cdecl    GScr_LoadDogAnimScripts(scriptInstance_t inst)

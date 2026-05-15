@@ -22,6 +22,7 @@ scrParserGlob_t gScrParserGlob[2];
 char g_EndPos;
 
 thread_local bool g_loadedImpureScript = false;
+bool g_loadScriptFromDisk = false;
 
 void __cdecl Scr_InitOpcodeLookup(scriptInstance_t inst)
 {
@@ -1134,7 +1135,7 @@ char *__cdecl Scr_ReadFile(
 {
     int file; // [esp+34h] [ebp-4h] BYREF
 
-    if ( fs_gameDirVar && *(_BYTE *)fs_gameDirVar->current.integer )
+    if ( g_loadScriptFromDisk || (fs_gameDirVar && *(_BYTE *)fs_gameDirVar->current.integer) )
     {
         if ( (FS_FOpenFileRead(extFilename, &file) & 0x80000000) != 0 )
         {

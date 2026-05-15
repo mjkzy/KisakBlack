@@ -192,3 +192,5 @@ extern scrParserPub_t gScrParserPub[2];
 extern scrParserGlob_t gScrParserGlob[2];
 
 extern char g_EndPos;
+
+extern bool g_loadScriptFromDisk;

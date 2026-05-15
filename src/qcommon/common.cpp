@@ -1940,7 +1940,7 @@ void __cdecl Com_Init_Try_Block_Function(char *commandLine)
         cls.soundStarted = 1;
         SND_Init();
         CG_SndGameReset();
-        Voice_Init();
+        //Voice_Init();
         R_Cinematic_Init();
     }
 #else
