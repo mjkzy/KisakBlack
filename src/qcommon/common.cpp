@@ -2795,8 +2795,10 @@ void __cdecl Com_Frame()
     }
     else
     {
-    Sys_LeaveCriticalSection(CRITSECT_COM_ERROR);
+        Sys_LeaveCriticalSection(CRITSECT_COM_ERROR);
     }
+
+    FrameMark;
 }
 
 unsigned int Com_Frame_Try_Block_Function()

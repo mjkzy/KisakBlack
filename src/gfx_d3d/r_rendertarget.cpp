@@ -1071,6 +1071,7 @@ void R_InitIntZRenderTarget_PC()
         return;
 
     // KISAKTODO: fix this INTZ thing, see if we can enable it on modern gpu's without nvapi (I believe the below code fails)
+    // Update: this library works now along with the other fixes, seems to add about 10%~ performance
 #ifdef KISAK_NVAPI_INTZ
     if ( adapterId.VendorId == 4318 && dx.nvInitialized )
     {

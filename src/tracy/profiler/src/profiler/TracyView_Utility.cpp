@@ -4,17 +4,10 @@
 #include "TracyPrint.hpp"
 #include "TracyUtility.hpp"
 #include "TracyView.hpp"
+#include "../common/TracyStackFrames.hpp"
 
 namespace tracy
 {
-
-bool View::IsFrameExternal( const char* filename, const char* image )
-{
-    if( strncmp( filename, "/usr/", 5 ) == 0 || strncmp( filename, "/lib/", 5 ) == 0 || strcmp( filename, "[unknown]" ) == 0 || strcmp( filename, "<kernel>" ) == 0 ) return true;
-    if( strncmp( filename, "C:\\Program Files\\", 17 ) == 0 || strncmp( filename, "d:\\a01\\_work\\", 13 ) == 0 ) return true;
-    if( !image ) return false;
-    return strncmp( image, "/usr/", 5 ) == 0 || strncmp( image, "/lib/", 5 ) == 0 || strncmp( image, "/lib64/", 7 ) == 0 || strcmp( image, "<kernel>" ) == 0;
-}
 
 uint32_t View::GetThreadColor( uint64_t thread, int depth )
 {
@@ -839,7 +832,7 @@ const char* View::GetFrameSetName( const FrameData& fd ) const
 
 const char* View::GetFrameSetName( const FrameData& fd, const Worker& worker )
 {
-    enum { Pool = 4 };
+    constexpr size_t Pool = 4;
     static char bufpool[Pool][64];
     static int bufsel = 0;
 
@@ -931,6 +924,220 @@ void View::UpdateTitle()
     {
         m_stcb( captureName );
     }
+}
+
+nlohmann::json View::GetCallstackJson( const CallstackFrameId* data, size_t size ) const
+{
+    nlohmann::json json = {
+        { "type", "callstack" },
+        { "frames", nlohmann::json::array() },
+        { "hint", "Frame N is where frame N-1 returns to. The caller of frame N-1 may differ from frame N." }
+    };
+    auto& frames = json["frames"];
+
+    auto end = data + size;
+    int fidx = 0;
+    while( data < end )
+    {
+        auto& entry = *data++;
+        auto frameData = m_worker.GetCallstackFrame( entry );
+        if( !frameData )
+        {
+            frames.push_back( { "pointer", m_worker.GetCanonicalPointer( entry ) } );
+        }
+        else
+        {
+            const auto fsz = frameData->size;
+            for( uint8_t f=0; f<fsz; f++ )
+            {
+                const auto& frame = frameData->data[f];
+                auto txt = m_worker.GetString( frame.name );
+
+                if( fidx == 0 && f != fsz-1 )
+                {
+                    auto test = tracy::s_tracyStackFrames;
+                    bool match = false;
+                    do
+                    {
+                        if( strcmp( txt, *test ) == 0 )
+                        {
+                            match = true;
+                            break;
+                        }
+                    }
+                    while( *++test );
+                    if( match ) continue;
+                }
+
+                frames.push_back( {
+                    { "function", txt },
+                    { "source", m_worker.GetString( frame.file ) },
+                } );
+                auto& frameJson = frames.back();
+
+                if( f == fsz-1 )
+                {
+                    frameJson["frame"] = fidx++;
+                    frameJson["inline"] = false;
+                }
+                else
+                {
+                    frameJson["frame"] = fidx;
+                    frameJson["inline"] = f;
+                }
+                if( frame.line != 0 )
+                {
+                    frameJson["line"] = frame.line;
+                }
+                if( frameData->imageName.Active() )
+                {
+                    frameJson["executable"] = m_worker.GetString( frameData->imageName );
+                }
+            }
+        }
+    }
+    return json;
+}
+
+static size_t GetNumLocalFrames( const Worker& m_worker, const CallstackFrameId* data, size_t size )
+{
+    size_t local = 0;
+    auto end = data + size;
+    while( data < end )
+    {
+        const auto frameData = m_worker.GetCallstackFrame( *data++ );
+        if( !frameData ) continue;
+        const auto& frame = frameData->data[frameData->size - 1];
+        if( !m_worker.IsFrameExternal( frame.file, frameData->imageName ) ) local++;
+    }
+    return local;
+}
+
+std::vector<CallstackFrameId> View::ReconstructZoneCallstack( const ZoneEvent& ev ) const
+{
+    constexpr int SampleLimit = 10000;
+    std::vector<CallstackFrameId> ret;
+
+    auto td = GetZoneThreadData( ev );
+    if( !td ) return ret;
+
+    auto it = std::lower_bound( td->samples.begin(), td->samples.end(), ev.Start(), [] ( const auto& l, const auto& r ) { return l.time.Val() < r; } );
+    auto end = std::lower_bound( it, td->samples.end(), m_worker.GetZoneEnd( ev ), [] ( const auto& l, const auto& r ) { return l.time.Val() < r; } );
+    if( std::distance( it, end ) > SampleLimit ) end = it + SampleLimit;
+
+    unordered_flat_map<uint64_t, unordered_flat_set<uint32_t>> roots;
+    while( it != end )
+    {
+        auto stack = it->callstack.Val();
+        auto& cs = m_worker.GetCallstack( stack );
+        auto root = cs.back().data;
+        auto rit = roots.find( root );
+        if( rit == roots.end() )
+        {
+            roots.emplace( root, unordered_flat_set<uint32_t> { stack } );
+        }
+        else
+        {
+            auto sit = rit->second.find( stack );
+            if( sit == rit->second.end() ) rit->second.emplace( stack );
+        }
+        ++it;
+    }
+
+    unordered_flat_set<uint32_t> stacks;
+    size_t globalMax = 0;
+    for( auto& root : roots )
+    {
+        size_t max = 0;
+        for( auto& stack : root.second )
+        {
+            auto& cs = m_worker.GetCallstack( stack );
+            const auto local = GetNumLocalFrames( m_worker, cs.data(), cs.size() );
+            max = std::max( max, local );
+        }
+
+        if( max > globalMax ) 
+        {
+            globalMax = max;
+            stacks = std::move( root.second );
+        }
+    }
+    if( stacks.empty() ) return ret;
+    roots.clear();
+
+    auto sit = stacks.begin();
+    while( sit != stacks.end() )
+    {
+        auto& scs = m_worker.GetCallstack( *sit );
+        if( GetNumLocalFrames( m_worker, scs.data(), scs.size() ) > 0 ) break;
+        ++sit;
+    }
+    if( sit == stacks.end() ) return ret;
+
+    auto& scs = m_worker.GetCallstack( *sit );
+    for( auto& v : scs ) ret.emplace_back( v );
+    while( ++sit != stacks.end() )
+    {
+        auto& cs = m_worker.GetCallstack( *sit );
+        if( GetNumLocalFrames( m_worker, cs.data(), cs.size() ) == 0 ) continue;
+
+        auto sz = cs.size();
+        if( ret.size() > sz ) ret.erase( ret.begin(), ret.end() - sz );
+        if( ret.size() == 0 ) return ret;
+
+        auto offset = std::max( size_t( 0 ), sz - ret.size() );
+        size_t match = 0;
+        for( int i = ret.size() - 1; i >= 0; i-- )
+        {
+            if( ret[i] == cs[i + offset] )
+            {
+                match++;
+            }
+            else
+            {
+                auto fd1 = m_worker.GetCallstackFrame( ret[i] );
+                auto fd2 = m_worker.GetCallstackFrame( cs[i + offset] );
+                if( fd1 && fd2 )
+                {
+                    auto& f1 = fd1->data[fd1->size - 1];
+                    auto& f2 = fd2->data[fd2->size - 1];
+                    if( m_worker.GetString( f1.name ) == m_worker.GetString( f2.name ) &&
+                        m_worker.GetString( f1.file ) == m_worker.GetString( f2.file ) )
+                    {
+                        match++;
+                    }
+                }
+                break;
+            }
+        }
+
+        if( match != ret.size() ) ret.erase( ret.begin(), ret.end() - match );
+    }
+
+    auto& srcloc = m_worker.GetSourceLocation( ev.SrcLoc() );
+    auto function = m_worker.GetString( srcloc.function );
+    auto file = m_worker.GetString( srcloc.file );
+
+    for( size_t i = 0; i < ret.size(); i++ )
+    {
+        auto frameData = m_worker.GetCallstackFrame( ret[i] );
+        if( !frameData ) continue;
+
+        const auto fsz = frameData->size;
+        for( uint8_t f = 0; f < fsz; f++ )
+        {
+            const auto& frame = frameData->data[f];
+            auto fname = m_worker.GetString( frame.name );
+            auto ffile = m_worker.GetString( frame.file );
+            if( ffile == file && strstr( fname, function ) != nullptr )
+            {
+                ret.erase( ret.begin(), ret.begin() + i );
+                return ret;
+            }
+        }
+    }
+
+    return ret;
 }
 
 }

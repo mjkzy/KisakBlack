@@ -1,14 +1,20 @@
 #include <inttypes.h>
+#include <nlohmann/json.hpp>
 #include <sstream>
 
 #include "../public/common/TracyStackFrames.hpp"
+#include "TracyConfig.hpp"
 #include "TracyImGui.hpp"
+#include "TracyMouse.hpp"
 #include "TracyPrint.hpp"
 #include "TracyUtility.hpp"
 #include "TracyView.hpp"
+#include "../Fonts.hpp"
 
 namespace tracy
 {
+
+extern double s_time;
 
 void View::DrawCallstackWindow()
 {
@@ -18,21 +24,30 @@ void View::DrawCallstackWindow()
     ImGui::Begin( "Call stack", &show, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse );
     if( !ImGui::GetCurrentWindowRead()->SkipItems )
     {
-        DrawCallstackTable( m_callstackInfoWindow, true );
+        DrawCallstackTable( m_callstackView.id, m_callstackView.thread, true, true );
     }
     ImGui::End();
-    if( !show ) m_callstackInfoWindow = 0;
+    if( !show ) m_callstackView = {};
 }
 
-void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
+void View::DrawCallstackTable( uint32_t callstack, uint64_t thread, bool globalEntriesButton, bool showThread )
 {
+    auto& crash = m_worker.GetCrashEvent();
+    const bool hasCrashed = crash.thread != 0 && crash.callstack == callstack;
+
     auto& cs = m_worker.GetCallstack( callstack );
+    DrawCallstackTable( cs.data(), cs.size(), thread, globalEntriesButton, showThread, hasCrashed, callstack );
+}
+
+void View::DrawCallstackTable( const CallstackFrameId* data, size_t size, uint64_t thread, bool globalEntriesButton, bool showThread, bool hasCrashed, int64_t callstack )
+{
     if( ClipboardButton() )
     {
         std::ostringstream s;
         int fidx = 0;
-        for( auto& entry : cs )
+        for( size_t i = 0; i < size; i++ )
         {
+            auto& entry = data[i];
             char buf[64*1024];
             auto frameData = m_worker.GetCallstackFrame( entry );
             if( !frameData )
@@ -96,10 +111,66 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
         }
         ImGui::SetClipboardText( s.str().c_str() );
     }
+    if( s_config.llm )
+    {
+        auto Attach = [this, data, size, hasCrashed, thread, callstack]() {
+            auto json = GetCallstackJson( data, size );
+            if( hasCrashed )
+            {
+                auto& crash = m_worker.GetCrashEvent();
+                json["crashed"] = true;
+                if( crash.message ) json["crash_reason"] = m_worker.GetString( crash.message );
+                auto threadName = m_worker.GetThreadName( crash.thread );
+                if( strcmp( threadName, "???" ) != 0 ) json["thread_name"] = threadName;
+                json["thread_id"] = crash.thread;
+            }
+            else
+            {
+                auto threadName = m_worker.GetThreadName( thread );
+                if( strcmp( threadName, "???" ) != 0 ) json["thread_name"] = threadName;
+                json["thread_id"] = thread;
+            }
+            if( callstack >= 0 ) json["id"] = callstack;
+
+            AddLlmAttachment( json );
+        };
+
+        ImGui::SameLine();
+        if( ImGui::SmallButton( ICON_FA_ROBOT ) )
+        {
+            Attach();
+        }
+        if( ImGui::IsItemHovered() && IsMouseClicked( ImGuiMouseButton_Right ) )
+        {
+            ImGui::OpenPopup( "##callstackllm" );
+        }
+        if( ImGui::BeginPopup( "##callstackllm" ) )
+        {
+            if( hasCrashed && ImGui::Selectable( "How to fix this crash?" ) )
+            {
+                Attach();
+                AddLlmQuery( "How to fix this crash?" );
+                ImGui::CloseCurrentPopup();
+            }
+            if( ImGui::Selectable( "What is program doing at this moment?" ) )
+            {
+                Attach();
+                AddLlmQuery( "What is program doing at this moment?" );
+                ImGui::CloseCurrentPopup();
+            }
+            if( ImGui::Selectable( "Walk me through the details of this callstack, step by step, explaining the code." ) )
+            {
+                Attach();
+                AddLlmQuery( "Walk me through the details of this callstack, step by step, explaining the code." );
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
     ImGui::SameLine();
     ImGui::Spacing();
     ImGui::SameLine();
-    SmallCheckbox( ICON_FA_SHIELD_HALVED " External frames", &m_showExternalFrames );
+    SmallCheckbox( ICON_FA_SHIELD_HALVED " External", &m_showExternalFrames );
     ImGui::SameLine();
     ImGui::Spacing();
     ImGui::SameLine();
@@ -107,20 +178,23 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
     ImGui::SameLine();
     ImGui::Spacing();
     ImGui::SameLine();
-    ImGui::TextUnformatted( ICON_FA_AT " Frame location:" );
+    ImGui::TextUnformatted( " Frame at:" );
     ImGui::SameLine();
     ImGui::PushStyleVar( ImGuiStyleVar_FramePadding, ImVec2( 0, 0 ) );
-    ImGui::RadioButton( "Source code", &m_showCallstackFrameAddress, 0 );
-    ImGui::SameLine();
-    ImGui::RadioButton( "Entry point", &m_showCallstackFrameAddress, 3 );
-    ImGui::SameLine();
-    ImGui::RadioButton( "Return address", &m_showCallstackFrameAddress, 1 );
-    ImGui::SameLine();
-    ImGui::RadioButton( "Symbol address", &m_showCallstackFrameAddress, 2 );
+    ImGui::SetNextItemWidth( ImGui::CalcTextSize( "Symbol address xxx" ).x );
+    ImGui::Combo( "##frameat", &m_showCallstackFrameAddress, "Source code\0Return address\0Symbol address\0Entry point\0" );
+
+    if( hasCrashed )
+    {
+        ImGui::SameLine();
+        ImGui::Spacing();
+        ImGui::SameLine();
+        TextColoredUnformatted( ImVec4( 1.f, 0.2f, 0.2f, 1.f ), ICON_FA_SKULL " Crash" );
+    }
 
     if( globalEntriesButton && m_worker.AreCallstackSamplesReady() )
     {
-        auto frame = m_worker.GetCallstackFrame( *cs.begin() );
+        auto frame = m_worker.GetCallstackFrame( *data );
         if( frame && frame->data[0].symAddr != 0 )
         {
             auto sym = m_worker.GetSymbolStats( frame->data[0].symAddr );
@@ -129,7 +203,7 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
                 ImGui::SameLine();
                 ImGui::Spacing();
                 ImGui::SameLine();
-                if( ImGui::Button( ICON_FA_DOOR_OPEN " Global entry statistics" ) )
+                if( ImGui::Button( ICON_FA_DOOR_OPEN " Entry stacks" ) )
                 {
                     ShowSampleParents( frame->data[0].symAddr, true );
                 }
@@ -137,6 +211,151 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
         }
     }
     ImGui::PopStyleVar();
+
+#ifndef __EMSCRIPTEN__
+    bool clicked = false;
+    if( s_config.llm && callstack >= 0 )
+    {
+        bool force = false;
+        if( s_config.llmAnnotateCallstacks )
+        {
+            std::lock_guard lock( m_callstackDescLock );
+            auto it = m_callstackDesc.find( callstack );
+            if( it == m_callstackDesc.end() ) force = true;
+        }
+        ImGui::SameLine();
+        ImGui::Spacing();
+        ImGui::SameLine();
+        bool clicked = false;
+        if( ImGui::SmallButton( ICON_FA_TAG ) || force )
+        {
+            nlohmann::json req = {
+                {
+                    { "role", "system" },
+                    { "content", "You are a helpful assistant. You analyze callstacks and provide a short description of what the program is doing at this moment. Your reply must be less than 100 characters." }
+                },
+                {
+                    { "role", "user" },
+                    { "content", GetCallstackJson( data, size )["frames"].dump() }
+                }
+            };
+
+            m_llm.QueueFastMessageLocking( req, [this, callstack] (nlohmann::json res) {
+                if( res.contains( "choices" ) )
+                {
+                    auto& choices = res["choices"];
+                    if( choices.is_array() && !choices.empty() )
+                    {
+                        auto& c0 = choices[0];
+                        if( c0.contains( "message" ) )
+                        {
+                            auto& msg = c0["message"];
+                            if( msg.contains( "role" ) && msg.contains( "content" ) )
+                            {
+                                auto& role = msg["role"];
+                                auto& content = msg["content"];
+                                if( role.is_string() && content.is_string() && msg["role"].get_ref<const std::string&>() == "assistant" )
+                                {
+                                    auto& str = msg["content"].get_ref<const std::string&>();
+                                    if( str.size() <= 120 )
+                                    {
+                                        if( str.find( '\n' ) != std::string::npos || str.find( '\r' ) != std::string::npos )
+                                        {
+                                            auto tmp = str;
+                                            std::ranges::replace( tmp, '\n', ' ' );
+                                            std::ranges::replace( tmp, '\r', ' ' );
+
+                                            std::lock_guard lock( m_callstackDescLock );
+                                            m_callstackDesc[callstack] = tmp;
+                                        }
+                                        else
+                                        {
+                                            std::lock_guard lock( m_callstackDescLock );
+                                            m_callstackDesc[callstack] = str;
+                                        }
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if( res.contains( "error" ) )
+                {
+                    auto& err = res["error"];
+                    if( err.contains( "message" ) )
+                    {
+                        auto& msg = err["message"];
+                        if( msg.is_string() )
+                        {
+                            std::lock_guard lock( m_callstackDescLock );
+                            m_callstackDesc[callstack] = "<error> " + msg.get_ref<const std::string&>();
+                            return;
+                        }
+                    }
+                }
+
+                std::lock_guard lock( m_callstackDescLock );
+                m_callstackDesc[callstack] = "<error>";
+            } );
+        }
+    }
+#endif
+
+    if( showThread && thread != 0 )
+    {
+        ImGui::SameLine();
+        ImGui::Spacing();
+        ImGui::SameLine();
+
+        ImGui::SeparatorEx( ImGuiSeparatorFlags_Vertical );
+
+        ImGui::SameLine();
+        ImGui::Spacing();
+        ImGui::SameLine();
+
+        SmallColorBox( GetThreadColor( thread, 0 ) );
+        ImGui::SameLine();
+        TextFocused( "Thread:", m_worker.GetThreadName( thread ) );
+        ImGui::SameLine();
+        ImGui::TextDisabled( "(%s)", RealToString( thread ) );
+        if( m_worker.IsThreadFiber( thread ) )
+        {
+            ImGui::SameLine();
+            TextColoredUnformatted( ImVec4( 0.2f, 0.6f, 0.2f, 1.f ), "Fiber" );
+        }
+    }
+
+#ifndef __EMSCRIPTEN__
+    if( s_config.llm && callstack >= 0 )
+    {
+        std::lock_guard lock( m_callstackDescLock );
+        auto it = m_callstackDesc.find( callstack );
+        if( it != m_callstackDesc.end() )
+        {
+            TextDisabledUnformatted( ICON_FA_HAND_POINT_RIGHT );
+            ImGui::SameLine();
+            if( strcmp( it->second.c_str(), "…" ) == 0 )
+            {
+                DrawWaitingDots( s_time, true, true );
+            }
+            else if( strncmp( it->second.c_str(), "<error>", 7 ) == 0 )
+            {
+                TextColoredUnformatted( ImVec4( 1.0f, 0.3f, 0.3f, 0.5f ), it->second.c_str() );
+            }
+            else
+            {
+                TextDisabledUnformatted( it->second.c_str() );
+            }
+            if( clicked ) it->second = "…";
+        }
+        else if( clicked )
+        {
+            m_callstackDesc.emplace( callstack, "…" );
+        }
+    }
+#endif
 
     ImGui::Separator();
     if( ImGui::BeginTable( "##callstack", 4, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY ) )
@@ -151,8 +370,9 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
         int external = 0;
         int fidx = 0;
         int bidx = 0;
-        for( auto& entry : cs )
+        for( size_t i = 0; i < size; i++ )
         {
+            auto& entry = data[i];
             auto frameData = m_worker.GetCallstackFrame( entry );
             if( !frameData )
             {
@@ -197,10 +417,8 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
                         if( match ) continue;
                     }
 
-                    auto filename = m_worker.GetString( frame.file );
-                    auto image = frameData->imageName.Active() ? m_worker.GetString( frameData->imageName ) : nullptr;
-
-                    if( IsFrameExternal( filename, image ) )
+                    const bool isExternal = m_worker.IsFrameExternal( frame.file, frameData->imageName );
+                    if( isExternal )
                     {
                         if( !m_showExternalFrames )
                         {
@@ -213,7 +431,7 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
                     {
                         ImGui::TableNextRow();
                         ImGui::TableNextColumn();
-                        ImGui::PushFont( m_smallFont );
+                        ImGui::PushFont( g_fonts.normal, FontSmall );
                         TextDisabledUnformatted( "external" );
                         ImGui::TableNextColumn();
                         if( external == 1 )
@@ -237,7 +455,7 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
                     }
                     else
                     {
-                        ImGui::PushFont( m_smallFont );
+                        ImGui::PushFont( g_fonts.normal, FontSmall );
                         TextDisabledUnformatted( "inline" );
                         ImGui::PopFont();
                     }
@@ -251,6 +469,19 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
                         else if( m_worker.GetCanonicalPointer( entry ) >> 63 != 0 )
                         {
                             TextColoredUnformatted( 0xFF8888FF, txt );
+                        }
+                        else if( isExternal )
+                        {
+                            if( m_vd.shortenName == ShortenName::Never )
+                            {
+                                TextDisabledUnformatted( txt );
+                            }
+                            else
+                            {
+                                const auto normalized = ShortenZoneName( ShortenName::OnlyNormalize, txt );
+                                TextDisabledUnformatted( normalized );
+                                TooltipNormalizedName( txt, normalized );
+                            }
                         }
                         else if( m_vd.shortenName == ShortenName::Never )
                         {
@@ -277,6 +508,7 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
                         indentVal = sin( time * 60.f ) * 10.f * time;
                         ImGui::Indent( indentVal );
                     }
+                    auto filename = m_worker.GetString( frame.file );
                     switch( m_showCallstackFrameAddress )
                     {
                     case 0:
@@ -389,8 +621,9 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
                     }
                     ImGui::PopTextWrapPos();
                     ImGui::TableNextColumn();
-                    if( image )
+                    if( frameData->imageName.Active() )
                     {
+                        auto image = m_worker.GetString( frameData->imageName );
                         const char* end = image + strlen( image );
 
                         if( m_shortImageNames )
@@ -418,7 +651,7 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
         {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            ImGui::PushFont( m_smallFont );
+            ImGui::PushFont( g_fonts.normal, FontSmall );
             TextDisabledUnformatted( "external" );
             ImGui::TableNextColumn();
             if( external == 1 )
@@ -435,9 +668,9 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
     }
 }
 
-void View::SmallCallstackButton( const char* name, uint32_t callstack, int& idx, bool tooltip )
+void View::SmallCallstackButton( const char* name, uint32_t callstack, int& idx, uint64_t tid, bool tooltip )
 {
-    bool hilite = m_callstackInfoWindow == callstack;
+    bool hilite = m_callstackView.id == callstack;
     if( hilite )
     {
         SetButtonHighlightColor();
@@ -445,7 +678,10 @@ void View::SmallCallstackButton( const char* name, uint32_t callstack, int& idx,
     ImGui::PushID( idx++ );
     if( ImGui::SmallButton( name ) )
     {
-        m_callstackInfoWindow = callstack;
+        m_callstackView = {
+            .id = callstack,
+            .thread = tid
+        };
     }
     ImGui::PopID();
     if( hilite )
@@ -461,12 +697,20 @@ void View::SmallCallstackButton( const char* name, uint32_t callstack, int& idx,
 void View::DrawCallstackCalls( uint32_t callstack, uint16_t limit ) const
 {
     const auto& csdata = m_worker.GetCallstack( callstack );
-    const auto cssz = std::min( csdata.size(), limit );
+    DrawCallstackCalls( csdata.data(), csdata.size(), limit );
+}
+
+void View::DrawCallstackCalls( const CallstackFrameId* data, size_t size, uint16_t limit ) const
+{
     bool first = true;
-    for( uint16_t i=0; i<cssz; i++ )
+    int i;
+    for( i = 0; i < size; i++ )
     {
-        const auto frameData = m_worker.GetCallstackFrame( csdata[i] );
+        const auto& v = data[i];
+        const auto frameData = m_worker.GetCallstackFrame( v );
         if( !frameData ) break;
+        const auto& frame = frameData->data[frameData->size - 1];
+        if( m_worker.IsFrameExternal( frame.file, frameData->imageName ) ) continue;
         if( first )
         {
             first = false;
@@ -477,7 +721,6 @@ void View::DrawCallstackCalls( uint32_t callstack, uint16_t limit ) const
             TextDisabledUnformatted( ICON_FA_LEFT_LONG );
             ImGui::SameLine();
         }
-        const auto& frame = frameData->data[frameData->size - 1];
         auto txt = m_worker.GetString( frame.name );
         if( txt[0] == '[' )
         {
@@ -490,6 +733,28 @@ void View::DrawCallstackCalls( uint32_t callstack, uint16_t limit ) const
         else
         {
             ImGui::TextUnformatted( ShortenZoneName( ShortenName::Always, txt ) );
+        }
+        if( --limit == 0 ) break;
+    }
+    if( limit == 0 )
+    {
+        bool framesLeft = false;
+        while( ++i < size )
+        {
+            const auto& v = data[i];
+            const auto frameData = m_worker.GetCallstackFrame( v );
+            if( !frameData ) break;
+            const auto& frame = frameData->data[frameData->size - 1];
+            if( m_worker.IsFrameExternal( frame.file, frameData->imageName ) ) continue;
+            framesLeft = true;
+            break;
+        }
+        if( framesLeft )
+        {
+            ImGui::SameLine();
+            TextDisabledUnformatted( ICON_FA_LEFT_LONG );
+            ImGui::SameLine();
+            TextDisabledUnformatted( ICON_FA_ELLIPSIS );
         }
     }
 }
@@ -537,6 +802,7 @@ void View::CallstackTooltipContents( uint32_t idx )
                     while( *++test );
                     if( match ) continue;
                 }
+
                 if( f == fsz-1 )
                 {
                     ImGui::TextDisabled( "%i.", fidx++ );
@@ -554,6 +820,19 @@ void View::CallstackTooltipContents( uint32_t idx )
                 {
                     TextColoredUnformatted( 0xFF8888FF, txt );
                 }
+                else if( m_worker.IsFrameExternal( frame.file, frameData->imageName ) )
+                {
+                    if( m_vd.shortenName == ShortenName::Never )
+                    {
+                        TextDisabledUnformatted( txt );
+                    }
+                    else
+                    {
+                        const auto normalized = ShortenZoneName( ShortenName::OnlyNormalize, txt );
+                        TextDisabledUnformatted( normalized );
+                        TooltipNormalizedName( txt, normalized );
+                    }
+                }
                 else if( m_vd.shortenName == ShortenName::Never )
                 {
                     ImGui::TextUnformatted( txt );
@@ -565,7 +844,7 @@ void View::CallstackTooltipContents( uint32_t idx )
                 if( frameData->imageName.Active() )
                 {
                     ImGui::SameLine();
-                    ImGui::PushFont( m_smallFont );
+                    ImGui::PushFont( g_fonts.normal, FontSmall );
                     ImGui::AlignTextToFramePadding();
                     TextDisabledUnformatted( m_worker.GetString( frameData->imageName ) );
                     ImGui::PopFont();

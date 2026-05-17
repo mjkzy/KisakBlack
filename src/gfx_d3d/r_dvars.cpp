@@ -1313,7 +1313,7 @@ void __cdecl R_RegisterDvars()
                              1,
                              0x20u,
                              "Allocate a float z buffer (required for effects such as floatz, dof, and laser light)");
-    r_depthPrepass = _Dvar_RegisterBool("r_depthPrepass", 0, 1u, "Enable depth prepass (usually improves performance)");
+    r_depthPrepass = _Dvar_RegisterBool("r_depthPrepass", 1, 1u, "Enable depth prepass (usually improves performance)");
     r_highLodDist = _Dvar_RegisterFloat(
                                         "r_highLodDist",
                                         -1.0,

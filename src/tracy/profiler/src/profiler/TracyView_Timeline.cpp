@@ -9,6 +9,7 @@
 #include "TracyTimelineItemPlot.hpp"
 #include "TracyTimelineItemThread.hpp"
 #include "TracyView.hpp"
+#include "../Fonts.hpp"
 
 namespace tracy
 {
@@ -86,8 +87,8 @@ void View::HandleTimelineMouse( int64_t timespan, const ImVec2& wpos, float w )
         }
     }
 
-    const auto hwheel_delta = io.MouseWheelH * 100.f * m_horizontalScrollMultiplier;
-    if( IsMouseDragging( 1 ) || hwheel_delta != 0 )
+    const bool wheel_scroll = abs( io.MouseWheelH ) > abs( io.MouseWheel );
+    if( IsMouseDragging( 1 ) || wheel_scroll )
     {
         m_viewMode = ViewMode::Paused;
         m_viewModeHeuristicTry = false;
@@ -95,6 +96,7 @@ void View::HandleTimelineMouse( int64_t timespan, const ImVec2& wpos, float w )
         if( !m_playback.pause && m_playback.sync ) m_playback.pause = true;
         const auto delta = GetMouseDragDelta( 1 );
         m_yDelta = delta.y;
+        const auto hwheel_delta = io.MouseWheelH * 50.f * m_horizontalScrollMultiplier;
         const auto dpx = int64_t( (delta.x * nspx) + (hwheel_delta * nspx));
         if( dpx != 0 )
         {
@@ -117,9 +119,10 @@ void View::HandleTimelineMouse( int64_t timespan, const ImVec2& wpos, float w )
         }
     }
 
-    const auto wheel = io.MouseWheel;
-    if( wheel != 0 )
+    const bool wheel_zoom = abs( io.MouseWheel ) > abs( io.MouseWheelH );
+    if( wheel_zoom )
     {
+        const auto wheel = io.MouseWheel;
         if( m_viewMode == ViewMode::LastFrames ) m_viewMode = ViewMode::LastRange;
         const double mouse = io.MousePos.x - wpos.x;
         const auto p = mouse / w;
@@ -144,6 +147,9 @@ void View::HandleTimelineMouse( int64_t timespan, const ImVec2& wpos, float w )
         else if( io.KeyShift ) mod = 0.5;
 
         mod *= m_verticalScrollMultiplier;
+#ifndef __EMSCRIPTEN__
+        mod *= fabs( wheel );
+#endif
 
         if( wheel > 0 )
         {
@@ -155,6 +161,7 @@ void View::HandleTimelineMouse( int64_t timespan, const ImVec2& wpos, float w )
             t0 -= std::max( int64_t( 1 ), int64_t( p1 * mod ) );
             t1 += std::max( int64_t( 1 ), int64_t( p2 * mod ) );
         }
+        t1 = std::max(t0, t1);
         ZoomToRange( t0, t1, !m_worker.IsConnected() || m_viewMode == ViewMode::Paused );
     }
 }
@@ -403,7 +410,7 @@ void View::DrawTimeline()
     }
 
     const auto vcenter = verticallyCenterTimeline && drawMouseLine && m_viewMode == ViewMode::Paused;
-    m_tc.End( pxns, wpos, hover, vcenter, yMin, yMax, m_smallFont );
+    m_tc.End( pxns, wpos, hover, vcenter, yMin, yMax );
     ImGui::EndChild();
 
     m_lockHighlight = m_nextLockHighlight;

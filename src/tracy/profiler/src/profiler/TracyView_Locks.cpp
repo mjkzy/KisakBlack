@@ -9,6 +9,7 @@
 #include "TracyTimelineContext.hpp"
 #include "TracyTimelineDraw.hpp"
 #include "TracyView.hpp"
+#include "../Fonts.hpp"
 
 namespace tracy
 {
@@ -26,7 +27,7 @@ void View::DrawLockHeader( uint32_t id, const LockMap& lockmap, const SourceLoca
     {
         sprintf( buf, "%" PRIu32 ": %s", id, m_worker.GetString( srcloc.function ) );
     }
-    ImGui::PushFont( m_smallFont );
+    ImGui::PushFont( g_fonts.normal, FontSmall );
     DrawTextContrast( draw, wpos + ImVec2( 0, offset ), 0xFF8888FF, buf );
     ImGui::PopFont();
     if( hover && ImGui::IsMouseHoveringRect( wpos + ImVec2( 0, offset ), wpos + ImVec2( w, offset + ty + 1 ) ) )
@@ -452,8 +453,8 @@ int View::DrawLocks( const TimelineContext& ctx, const std::vector<std::unique_p
             if( m_lockHighlight.thread != lock.thread && ( v.state == LockState::HasBlockingLock ) != m_lockHighlight.blocked && v.next != lockmap.timeline.end() && m_lockHighlight.id == int64_t( lock.id ) && m_lockHighlight.begin <= v.ptr->ptr->Time() && m_lockHighlight.end >= v.next->ptr->Time() )
             {
                 const auto t = uint8_t( ( sin( std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::system_clock::now().time_since_epoch() ).count() * 0.01 ) * 0.5 + 0.5 ) * 255 );
-                draw->AddRect( wpos + ImVec2( std::max( px0, -10.0 ), offset ), wpos + ImVec2( std::min( px1, double( w + 10 ) ), offset + ty ), 0x00FFFFFF | ( t << 24 ), 0.f, -1, 2.f );
-                m_wasActive = true;
+                draw->AddRect( wpos + ImVec2( std::max( px0, -10.0 ), offset ), wpos + ImVec2( std::min( px1, double( w + 10 ) ), offset + ty ), 0x00FFFFFF | ( t << 24 ), 0.f, 2.f );
+                m_wasActive.store( true, std::memory_order_release );
             }
             else if( v.condensed == 0 )
             {
@@ -558,7 +559,7 @@ void View::DrawLockInfoWindow()
             }
         }
 
-        ImGui::PushFont( m_bigFont );
+        ImGui::PushFont( g_fonts.normal, FontBig );
         if( lock.customName.Active() )
         {
             ImGui::Text( "Lock #%" PRIu32 ": %s", m_lockInfoWindow, m_worker.GetString( lock.customName ) );

@@ -4,6 +4,7 @@
 #include "TracyPrint.hpp"
 #include "TracyTimelineContext.hpp"
 #include "TracyView.hpp"
+#include "../Fonts.hpp"
 
 namespace tracy
 {
@@ -25,7 +26,7 @@ bool View::DrawGpu( const TimelineContext& ctx, const GpuCtxData& gpu, int& offs
 
     auto draw = ImGui::GetWindowDrawList();
 
-    ImGui::PushFont( m_smallFont );
+    ImGui::PushFont( g_fonts.normal, FontSmall );
     const auto sty = ImGui::GetTextLineHeight();
     const auto sstep = sty + 1;
     ImGui::PopFont();
@@ -50,7 +51,7 @@ bool View::DrawGpu( const TimelineContext& ctx, const GpuCtxData& gpu, int& offs
                 {
                     if( !singleThread )
                     {
-                        ImGui::PushFont( m_smallFont );
+                        ImGui::PushFont( g_fonts.normal, FontSmall );
                         DrawTextContrast( draw, wpos + ImVec2( ty, offset-1-sstep ), 0xFFFFAAAA, m_worker.GetThreadName( td.first ) );
                         DrawLine( draw, dpos + ImVec2( 0, offset+sty-sstep ), dpos + ImVec2( w, offset+sty-sstep ), 0x22FFAAAA );
                         ImGui::PopFont();
@@ -77,7 +78,7 @@ bool View::DrawGpu( const TimelineContext& ctx, const GpuCtxData& gpu, int& offs
                 {
                     if( !singleThread )
                     {
-                        ImGui::PushFont( m_smallFont );
+                        ImGui::PushFont( g_fonts.normal, FontSmall );
                         DrawTextContrast( draw, wpos + ImVec2( ty, offset-1-sstep ), 0xFFFFAAAA, m_worker.GetThreadName( td.first ) );
                         DrawLine( draw, dpos + ImVec2( 0, offset+sty-sstep ), dpos + ImVec2( w, offset+sty-sstep ), 0x22FFAAAA );
                         ImGui::PopFont();
@@ -247,11 +248,11 @@ int View::DrawGpuZoneLevel( const V& vec, bool hover, double pxns, int64_t nspx,
             {
                 if( zoneColor.thickness > 1.f )
                 {
-                    draw->AddRect( wpos + ImVec2( px0 + 1, offset + 1 ), wpos + ImVec2( px1 - 1, offset + tsz.y - 1 ), zoneColor.accentColor, 0.f, -1, zoneColor.thickness );
+                    draw->AddRect( wpos + ImVec2( px0 + 1, offset + 1 ), wpos + ImVec2( px1 - 1, offset + tsz.y - 1 ), zoneColor.accentColor, 0.f, zoneColor.thickness );
                 }
                 else
                 {
-                    draw->AddRect( wpos + ImVec2( px0, offset ), wpos + ImVec2( px1, offset + tsz.y ), zoneColor.accentColor, 0.f, -1, zoneColor.thickness );
+                    draw->AddRect( wpos + ImVec2( px0, offset ), wpos + ImVec2( px1, offset + tsz.y ), zoneColor.accentColor, 0.f, zoneColor.thickness );
                 }
             }
             else

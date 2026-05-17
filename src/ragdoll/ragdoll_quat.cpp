@@ -8,22 +8,13 @@ void __cdecl Ragdoll_QuatMul(const float *qa, const float *qb, float *dest)
     float w0; // [esp+0h] [ebp-8h]
     float w1; // [esp+4h] [ebp-4h]
 
-    if ( (qa == dest || qb == dest)
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\ragdoll\\ragdoll_quat.cpp",
-                    21,
-                    0,
-                    "%s",
-                    "qa != dest && qb != dest") )
-    {
-        __debugbreak();
-    }
+    iassert(qa != dest && qb != dest);
     w0 = qa[3];
     w1 = qb[3];
-    *dest = (float)((float)((float)(w0 * *qb) + (float)(w1 * *qa)) + (float)(qa[1] * qb[2])) - (float)(qa[2] * qb[1]);
-    dest[1] = (float)((float)((float)(w0 * qb[1]) + (float)(w1 * qa[1])) + (float)(qa[2] * *qb)) - (float)(*qa * qb[2]);
-    dest[2] = (float)((float)((float)(w0 * qb[2]) + (float)(w1 * qa[2])) + (float)(*qa * qb[1])) - (float)(qa[1] * *qb);
-    dest[3] = (float)((float)((float)(w0 * w1) - (float)(*qa * *qb)) - (float)(qa[1] * qb[1])) - (float)(qa[2] * qb[2]);
+    dest[0] = w0 * qb[0] + w1 * qa[0] + qa[1] * qb[2] - qa[2] * qb[1];
+    dest[1] = w0 * qb[1] + w1 * qa[1] + qa[2] * *qb - *qa * qb[2];
+    dest[2] = w0 * qb[2] + w1 * qa[2] + *qa * qb[1] - qa[1] * *qb;
+    dest[3] = w0 * w1 - qa[0] * qb[0] - qa[1] * qb[1] - qa[2] * qb[2];
 }
 
 void __cdecl Ragdoll_QuatMulInvSecond(const float *qa, const float *qb, float *dest)
@@ -36,9 +27,6 @@ void __cdecl Ragdoll_QuatMulInvSecond(const float *qa, const float *qb, float *d
 
 void __cdecl Ragdoll_QuatConjugate(const float *src, float *dest)
 {
-    //*(unsigned int *)dest = *(unsigned int *)src ^ _mask__NegFloat_;
-    //*((unsigned int *)dest + 1) = *((unsigned int *)src + 1) ^ _mask__NegFloat_;
-    //*((unsigned int *)dest + 2) = *((unsigned int *)src + 2) ^ _mask__NegFloat_;
     dest[0] = -src[0];
     dest[1] = -src[1];
     dest[2] = -src[2];
@@ -47,23 +35,8 @@ void __cdecl Ragdoll_QuatConjugate(const float *src, float *dest)
 
 void __cdecl Ragdoll_QuatInverse(const float *src, float *dest)
 {
-    const char *v2; // eax
+    iassert(Vec4IsNormalized(src));
 
-    if ( !Vec4IsNormalized(src) )
-    {
-        v2 = va("%g %g %g %g", *src, src[1], src[2], src[3]);
-        if ( !Assert_MyHandler(
-                        "C:\\projects_pc\\cod\\codsrc\\src\\ragdoll\\ragdoll_quat.cpp",
-                        91,
-                        0,
-                        "%s\n\t%s",
-                        "Vec4IsNormalized( src )",
-                        v2) )
-            __debugbreak();
-    }
-    //*(unsigned int *)dest = *(unsigned int *)src ^ _mask__NegFloat_;
-    //*((unsigned int *)dest + 1) = *((unsigned int *)src + 1) ^ _mask__NegFloat_;
-    //*((unsigned int *)dest + 2) = *((unsigned int *)src + 2) ^ _mask__NegFloat_;
     dest[0] = -src[0];
     dest[1] = -src[1];
     dest[2] = -src[2];
@@ -77,90 +50,77 @@ void __cdecl Ragdoll_QuatPointRotate(const float *p, const float *q, float *dest
     float tmp1[4]; // [esp+20h] [ebp-20h] BYREF
     float qInv[4]; // [esp+30h] [ebp-10h] BYREF
 
-    qp[0] = *p;
+    qp[0] = p[0];
     qp[1] = p[1];
     qp[2] = p[2];
-    qp[3] = 0.0f;
+    qp[3] = 0.0;
     Ragdoll_QuatInverse(q, qInv);
     Ragdoll_QuatMul(q, qInv, tmp0);
     Ragdoll_QuatMul(tmp0, qp, tmp1);
-    *dest = tmp1[0];
+    dest[0] = tmp1[0];
     dest[1] = tmp1[1];
     dest[2] = tmp1[2];
 }
 
 void __cdecl Ragdoll_Mat33ToQuat(const float (*axis)[3], float *quat)
 {
-    float v2; // xmm0_4
-    float trace; // [esp+Ch] [ebp-8h]
-    float s; // [esp+10h] [ebp-4h]
-    float sa; // [esp+10h] [ebp-4h]
-    float sb; // [esp+10h] [ebp-4h]
-    float sc; // [esp+10h] [ebp-4h]
+    const float *m = (const float *)axis;
+    const float m00 = m[0], m01 = m[1], m02 = m[2];
+    const float m10 = m[3], m11 = m[4], m12 = m[5];
+    const float m20 = m[6], m21 = m[7], m22 = m[8];
+    const float trace = m00 + m11 + m22 + 1.0f;
+    float s;
 
-    trace = (float)((float)((*axis)[0] + (float)(*axis)[4]) + (float)(*axis)[8]) + 1.0;
-    if ( trace <= 0.000001 )
+    if ( trace > 0.000001f )
     {
-        if ( (*axis)[0] <= (*axis)[4] || (*axis)[0] <= (*axis)[8] )
-        {
-            if ( (*axis)[4] <= (*axis)[8] )
-            {
-                sc = sqrtf((float)((float)((float)(*axis)[8] + 1.0) - (*axis)[0]) - (float)(*axis)[4]) * 2.0;
-                *quat = (float)((float)(*axis)[2] + (float)(*axis)[6]) / sc;
-                quat[1] = (float)((float)(*axis)[5] + (float)(*axis)[7]) / sc;
-                quat[2] = 0.25 * sc;
-                v2 = (float)((float)(*axis)[1] - (float)(*axis)[3]) / sc;
-            }
-            else
-            {
-                sb = sqrtf((float)((float)((float)(*axis)[4] + 1.0) - (*axis)[0]) - (float)(*axis)[8]) * 2.0;
-                *quat = (float)((float)(*axis)[1] + (float)(*axis)[3]) / sb;
-                quat[1] = 0.25 * sb;
-                quat[2] = (float)((float)(*axis)[5] + (float)(*axis)[7]) / sb;
-                v2 = (float)((float)(*axis)[2] - (float)(*axis)[6]) / sb;
-            }
-            quat[3] = v2;
-        }
-        else
-        {
-            sa = sqrtf((float)((float)((*axis)[0] + 1.0) - (float)(*axis)[4]) - (float)(*axis)[8]) * 2.0;
-            *quat = 0.25 * sa;
-            quat[1] = (float)((float)(*axis)[1] + (float)(*axis)[3]) / sa;
-            quat[2] = (float)((float)(*axis)[2] + (float)(*axis)[6]) / sa;
-            quat[3] = (float)((float)(*axis)[5] - (float)(*axis)[7]) / sa;
-        }
+        s = 0.5f / sqrtf(trace);
+        quat[0] = (m21 - m12) * s;
+        quat[1] = (m02 - m20) * s;
+        quat[2] = (m10 - m01) * s;
+        quat[3] = 0.25f / s;
+    }
+    else if ( m00 > m11 && m00 > m22 )
+    {
+        s = sqrtf(m00 - m11 - m22 + 1.0f) * 2.0f;
+        quat[0] = 0.25f * s;
+        quat[1] = (m01 + m10) / s;
+        quat[2] = (m02 + m20) / s;
+        quat[3] = (m21 - m12) / s;   // was (m12 - m21) — IDA-faithful but inconsistent with trace branch's qx ∝ (m21-m12)
+    }
+    else if ( m11 > m22 )
+    {
+        s = sqrtf(m11 - m00 - m22 + 1.0f) * 2.0f;
+        quat[0] = (m01 + m10) / s;
+        quat[1] = 0.25f * s;
+        quat[2] = (m12 + m21) / s;
+        quat[3] = (m02 - m20) / s;
     }
     else
     {
-        s = 0.5 / sqrtf(trace);
-        *quat = (float)((float)(*axis)[7] - (float)(*axis)[5]) * s;
-        quat[1] = (float)((float)(*axis)[2] - (float)(*axis)[6]) * s;
-        quat[2] = (float)((float)(*axis)[3] - (float)(*axis)[1]) * s;
-        quat[3] = 0.25 / s;
+        s = sqrtf(m22 - m00 - m11 + 1.0f) * 2.0f;
+        quat[0] = (m02 + m20) / s;
+        quat[1] = (m12 + m21) / s;
+        quat[2] = 0.25f * s;
+        quat[3] = (m10 - m01) / s;   // was (m01 - m10) — same sign-convention fix as m00 branch
     }
 }
 
 void __cdecl Ragdoll_QuatToAxisAngle(const float *quat, float *axisAngle)
 {
-    long double v2; // [esp+4h] [ebp-1Ch]
-    float v3; // [esp+4h] [ebp-1Ch]
-    float v4; // [esp+Ch] [ebp-14h]
+    float sinHalfTheta; // [esp+8h] [ebp-14h]
+    float angleMag;     // [esp+Ch] [ebp-10h]
+    float halfTheta;    // [esp+14h] [ebp-8h]
 
-    v4 = Q_acos(quat[3]);
-    //__libm_sse2_sin(v2);
-    v4 = sin(v4);
-    if ( fabs(v4) <= 0.000001 )
+    halfTheta = Q_acos(quat[3]);
+    sinHalfTheta = sin(halfTheta);
+    if ( I_fabs(sinHalfTheta) <= 0.000001 )
     {
-        *axisAngle = 0.0f;
-        axisAngle[1] = 0.0f;
-        axisAngle[2] = 0.0f;
+        Vec3Clear(axisAngle);
     }
     else
     {
-        v3 = (float)(2.0 * v4) / v4;
-        *axisAngle = *quat * v3;
-        axisAngle[1] = quat[1] * v3;
-        axisAngle[2] = quat[2] * v3;
+        angleMag = halfTheta * 2.0 / sinHalfTheta;
+        Vec3Scale(quat, angleMag, axisAngle);
     }
 }
 

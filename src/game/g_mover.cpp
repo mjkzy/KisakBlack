@@ -308,7 +308,7 @@ void    CreateConstraint(PhysConstraint *constraint)
     }
 }
 
-void __cdecl DeleteConstraint(phys_free_list<RagdollBody>::T_internal_base *rope_index)
+void __cdecl DeleteConstraint(int rope_index)
 {
     PhysConstraint *constraint; // [esp+4h] [ebp-8h]
     int i; // [esp+8h] [ebp-4h]
@@ -317,7 +317,7 @@ void __cdecl DeleteConstraint(phys_free_list<RagdollBody>::T_internal_base *rope
     {
         constraint = &cm.constraints[i];
         if ( constraint->type == CONSTRAINT_ROPE
-            && (phys_free_list<RagdollBody>::T_internal_base *)constraint->rope_index == rope_index
+            && constraint->rope_index == rope_index
             && constraint->constraintHandle )
         {
             phys_sys::destroy((rigid_body_constraint_distance *const)constraint->constraintHandle);

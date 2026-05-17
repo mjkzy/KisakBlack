@@ -12,7 +12,7 @@ unsigned __int64 g_DXDeviceThread;
 
 int __cdecl R_AcquireDXDeviceOwnership(void (__cdecl *pumpfunc)())
 {
-    PROF_SCOPED("R_AcquireDXDeviceOwnership");
+    //PROF_SCOPED("R_AcquireDXDeviceOwnership"); 4 MILLION CALLS PER SECOND. THIS LAGS.
 
     unsigned __int64 current_thread; // [esp+0h] [ebp-8h]
 
@@ -23,6 +23,7 @@ int __cdecl R_AcquireDXDeviceOwnership(void (__cdecl *pumpfunc)())
     {
         while ( !Sys_TryEnterCriticalSection(CRITSECT_DXDEVICE) )
         {
+            PROF_SCOPED("R_AcquireDXDeviceOwnership Pump&Sleep")
             if ( pumpfunc )
                 pumpfunc();
             NET_Sleep(1u);

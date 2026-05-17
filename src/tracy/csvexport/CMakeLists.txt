@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 
-option(NO_ISA_EXTENSIONS "Disable ISA extensions (don't pass -march=native or -mcpu=native to the compiler)" OFF)
-
 set(NO_STATISTICS OFF)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/version.cmake)
@@ -17,12 +15,14 @@ project(
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/config.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/vendor.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/server.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/GitRef.cmake)
 
 set(PROGRAM_FILES
     src/csvexport.cpp
 )
 
 add_executable(${PROJECT_NAME} ${PROGRAM_FILES} ${COMMON_FILES} ${SERVER_FILES})
+add_git_ref(${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME} PRIVATE TracyServer TracyGetOpt)
 set_property(DIRECTORY ${CMAKE_CURRENT_LIST_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 

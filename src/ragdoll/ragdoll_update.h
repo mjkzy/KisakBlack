@@ -16,7 +16,7 @@ struct StateEnt // sizeof=0xC
 };
 
 void __cdecl Ragdoll_AnimMatToMat43(const DObjAnimMat *mat, float (*out)[3]);
-char __cdecl Ragdoll_RebindBody(const cpose_t *ragdollHandle);
+char __cdecl Ragdoll_RebindBody(int ragdollHandle);
 char __cdecl Ragdoll_ValidateBodyObj(RagdollBody *body);
 void __cdecl Ragdoll_SnapshotBaseLerpOffsets(RagdollBody *body);
 void __cdecl Ragdoll_GetDObjBaseBoneMatrix(DObj *obj, unsigned __int8 boneIndex, DObjAnimMat *outMat);
@@ -31,9 +31,9 @@ void __cdecl Ragdoll_ExplosionEvent(
                 float inScale);
 bool __cdecl Ragdoll_BodyIdle(RagdollBody *body);
 void __cdecl Ragdoll_GetTorsoPosition(RagdollBody *body, float *center);
-void __cdecl Ragdoll_Launch(int localClientNum, const cpose_t *ragdollHandle, const float *force, hitLocation_t hitloc);
+void __cdecl Ragdoll_Launch(int localClientNum, int ragdollHandle, const float *force, hitLocation_t hitloc);
 void __cdecl Ragdoll_LaunchUpdate(RagdollBody *body);
-void __cdecl Ragdoll_Attach(int localClientNum, const cpose_t *ragdollHandle, int attachEnt, hitLocation_t hitloc);
+void __cdecl Ragdoll_Attach(int localClientNum, int ragdollHandle, int attachEnt, hitLocation_t hitloc);
 void __cdecl Ragdoll_AttachUpdate(RagdollBody *body);
 char __cdecl Ragdoll_EnterTunnelTest(RagdollBody *body);
 void __cdecl Ragdoll_SnapshotBaseLerpBones(RagdollBody *body, BoneOrientation *snapshot);
@@ -90,5 +90,5 @@ void __cdecl Ragdoll_FilterBonePositions(RagdollBody *body);
 char __cdecl Ragdoll_BodyNewState(RagdollBody *body, RagdollBodyState state);
 void __cdecl Ragdoll_BodyUpdate(int msec, RagdollBody *body);
 void __cdecl Ragdoll_Update(int msec);
-void __cdecl Ragdoll_RemoveConstraintsForRope(phys_free_list<RagdollBody>::T_internal_base *rope_id);
-int __cdecl Ragdoll_GetRBForBone(phys_free_list<RagdollBody>::T_internal_base *entnum, unsigned int boneName);
+void __cdecl Ragdoll_RemoveConstraintsForRope(int rope_id);
+int __cdecl Ragdoll_GetRBForBone(int entnum, unsigned int boneName);

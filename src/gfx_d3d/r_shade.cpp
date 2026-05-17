@@ -5,6 +5,7 @@
 #include "rb_logfile.h"
 #include "rb_shade.h"
 #include "r_water.h"
+#include <universal/profile.h>
 
 bool Use_R_SetVertexShaderConstantFromCode_New = true;
 
@@ -986,6 +987,8 @@ void __cdecl R_SetVertexShader(GfxCmdBufState *state, const MaterialVertexShader
 
 void __cdecl R_SetupPass(GfxCmdBufContext context, unsigned int passIndex)
 {
+    PROF_SCOPED("R_SetupPass");
+
     const MaterialPass *pass; // [esp+0h] [ebp-14h]
     const Material *material; // [esp+4h] [ebp-10h]
     const GfxStateBits *refStateBits; // [esp+8h] [ebp-Ch]

@@ -1,4 +1,4 @@
-project('tracy', ['cpp'], version: '0.12.2', meson_version: '>=1.3.0', default_options : ['cpp_std=c++11'])
+project('tracy', ['cpp'], version: '0.13.1', meson_version: '>=1.3.0', default_options : ['cpp_std=c++11'])
 
 # internal compiler flags
 tracy_compile_args = []
@@ -17,8 +17,8 @@ if get_option('on_demand')
   tracy_common_args += ['-DTRACY_ON_DEMAND']
 endif
 
-if get_option('callstack')
-  tracy_common_args += ['-DTRACY_CALLSTACK']
+if get_option('callstack') > 0
+  tracy_common_args += ['-DTRACY_CALLSTACK='+get_option('callstack').to_string()]
 endif
 
 if get_option('no_callstack')
@@ -93,6 +93,10 @@ if get_option('timer_fallback')
   tracy_common_args += ['-DTRACY_TIMER_FALLBACK']
 endif
 
+if get_option('disallow_hw_timer')
+  tracy_common_args += ['-DTRACY_DISALLOW_HW_TIMER']
+endif
+
 if get_option('no_crash_handler')
   tracy_common_args += ['-DTRACY_NO_CRASH_HANDLER']
 endif
@@ -114,9 +118,17 @@ if get_option('verbose')
   tracy_common_args += ['-DTRACY_VERBOSE']
 endif
 
+if get_option('no_internal_message')
+  tracy_common_args += ['-DTRACY_NO_INTERNAL_MESSAGE']
+endif
+
 if get_option('debuginfod')
   tracy_common_args += ['-DTRACY_DEBUGINFOD']
   tracy_public_deps += dependency('libdebuginfod')
+endif
+
+if get_option('ignore_memory_faults')
+  tracy_common_args += ['-DTRACY_IGNORE_MEMORY_FAULTS']
 endif
 
 tracy_shared_libs = get_option('default_library') == 'shared'
@@ -126,7 +138,7 @@ if tracy_shared_libs
 endif
 
 if host_machine.system() == 'windows'
-  tracy_compile_args += ['-DWINVER=0x0601', '-D_WIN32_WINNT=0x0601']
+  tracy_compile_args += ['-DWINVER=0x0A00', '-D_WIN32_WINNT=0x0A00']
 endif
 
 includes = [
@@ -153,6 +165,7 @@ client_includes = [
     'public/client/TracyFastVector.hpp',
     'public/client/TracyKCore.hpp',
     'public/client/TracyLock.hpp',
+    'public/client/TracyMangle.hpp',
     'public/client/TracyProfiler.hpp',
     'public/client/TracyRingBuffer.hpp',
     'public/client/TracyScoped.hpp',
@@ -177,7 +190,8 @@ common_includes = [
     'public/common/TracySocket.hpp',
     'public/common/TracyStackFrames.hpp',
     'public/common/TracySystem.hpp',
-    'public/common/TracyUwp.hpp',
+    'public/common/TracyTaggedUserlandAddress.hpp',
+    'public/common/TracyWinFamily.hpp',
     'public/common/TracyYield.hpp'
 ]
 
@@ -220,7 +234,8 @@ endif
 pkg = import('pkgconfig')
 pkg.generate(tracy,
   extra_cflags : tracy_dep_compile_args,
-  requires     : tracy_public_deps)
+  requires     : tracy_public_deps,
+  libraries: [tracy])
 
 tracy_dep = declare_dependency(
     compile_args        : tracy_dep_compile_args,

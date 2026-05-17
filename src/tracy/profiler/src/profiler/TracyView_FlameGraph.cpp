@@ -9,6 +9,7 @@
 #include "TracyVector.hpp"
 #include "TracyView.hpp"
 #include "tracy_pdqsort.h"
+#include "../Fonts.hpp"
 
 namespace tracy
 {
@@ -244,7 +245,7 @@ void View::BuildFlameGraph( const Worker& worker, std::vector<FlameGraphItem>& d
     }
 }
 
-void View::BuildFlameGraph( const Worker& worker, std::vector<FlameGraphItem>& data, const Vector<SampleData>& samples )
+void View::BuildFlameGraph( const Worker& worker, std::vector<FlameGraphItem>& data, const Vector<SampleData>& samples, unordered_flat_map<uint64_t, bool>& externalCache )
 {
     struct FrameCache
     {
@@ -301,14 +302,9 @@ void View::BuildFlameGraph( const Worker& worker, std::vector<FlameGraphItem>& d
                     {
                         const auto frame = frameData->data[j-1];
                         const auto symaddr = frame.symAddr;
-                        if( symaddr != 0 )
+                        if( symaddr != 0 && !m_worker.IsFrameExternal( frame.file, frameData->imageName, externalCache ) )
                         {
-                            auto filename = m_worker.GetString( frame.file );
-                            auto image = frameData->imageName.Active() ? m_worker.GetString( frameData->imageName ) : nullptr;
-                            if( !IsFrameExternal( filename, image ) )
-                            {
-                                cache.emplace_back( FrameCache { symaddr, frame.name } );
-                            }
+                            cache.emplace_back( FrameCache { symaddr, frame.name } );
                         }
                     }
                 }
@@ -327,9 +323,7 @@ void View::BuildFlameGraph( const Worker& worker, std::vector<FlameGraphItem>& d
                         const auto symaddr = frame.symAddr;
                         if( symaddr != 0 )
                         {
-                            auto filename = m_worker.GetString( frame.file );
-                            auto image = frameData->imageName.Active() ? m_worker.GetString( frameData->imageName ) : nullptr;
-                            cache.emplace_back( FrameCache { symaddr, frame.name, IsFrameExternal( filename, image ) } );
+                            cache.emplace_back( FrameCache { symaddr, frame.name, m_worker.IsFrameExternal( frame.file, frameData->imageName, externalCache ) } );
                         }
                     }
                 }
@@ -558,13 +552,13 @@ void View::DrawFlameGraphItem( const FlameGraphItem& item, FlameGraphContext& ct
                     TextDisabledUnformatted( ICON_FA_HAT_WIZARD " kernel" );
                 }
                 ImGui::SameLine();
-                ImGui::PushFont( m_smallFont );
+                ImGui::PushFont( g_fonts.normal, FontSmall );
                 ImGui::AlignTextToFramePadding();
                 ImGui::TextDisabled( "0x%" PRIx64, symAddr );
                 ImGui::PopFont();
                 if( normalized != name && strcmp( normalized, name ) != 0 )
                 {
-                    ImGui::PushFont( m_smallFont );
+                    ImGui::PushFont( g_fonts.normal, FontSmall );
                     TextDisabledUnformatted( name );
                     ImGui::PopFont();
                 }
@@ -775,6 +769,10 @@ void View::DrawFlameGraph()
         if( m_flameExternal ) ImGui::EndDisabled();
     }
 
+    ImGui::SameLine();
+    ImGui::SeparatorEx( ImGuiSeparatorFlags_Vertical );
+    ImGui::SameLine();
+
     if( ImGui::Checkbox( "Limit range", &m_flameRange.active ) )
     {
         if( m_flameRange.active && m_flameRange.min == 0 && m_flameRange.max == 0 )
@@ -832,9 +830,27 @@ void View::DrawFlameGraph()
             m_flameGraphInvariant.Reset();
         }
 
+        const auto& style = ImGui::GetStyle();
+        float probe = 0;
+        for( auto& t : td )
+        {
+            float w = ImGui::GetFrameHeight() * 2 + ImGui::CalcTextSize( m_worker.GetThreadName( t->id ) ).x + style.ItemSpacing.x * 2;
+            if( t->isFiber ) w += style.ItemSpacing.x + ImGui::CalcTextSize( "Fiber" ).x;
+            probe = std::max( probe, w );
+        }
+        const auto MinWidth = std::max( 150 * GetScale(), probe );
+        const int cols = std::max( 1, int( ImGui::GetContentRegionAvail().x / MinWidth ) );
+
+        const auto rows = ( tsz + cols - 1 ) / cols;
+        const auto rowsVisible = std::min<float>( rows, 7.5f );
+        const auto rowsHeight = ImGui::GetTextLineHeightWithSpacing() * rowsVisible;
+        ImGui::BeginChild( "###flamegraphthreadrows", ImVec2( -1, rowsHeight ) );
+
         int idx = 0;
+        ImGui::BeginTable( "##flamegraphthreadcols", cols, ImGuiTableFlags_NoSavedSettings );
         for( const auto& t : td )
         {
+            ImGui::TableNextColumn();
             ImGui::PushID( idx++ );
             const auto threadColor = GetThreadColor( t->id, 0 );
             SmallColorBox( threadColor );
@@ -847,6 +863,8 @@ void View::DrawFlameGraph()
                 TextColoredUnformatted( ImVec4( 0.2f, 0.6f, 0.2f, 1.f ), "Fiber" );
             }
         }
+        ImGui::EndTable();
+        ImGui::EndChild();
         ImGui::TreePop();
     }
 
@@ -902,7 +920,8 @@ void View::DrawFlameGraph()
                 if( FlameGraphThread( thread->id ) )
                 {
                     m_td.Queue( [this, idx, thread, &threadData] {
-                        BuildFlameGraph( m_worker, threadData[idx], thread->samples );
+                        unordered_flat_map<uint64_t, bool> externalCache;
+                        BuildFlameGraph( m_worker, threadData[idx], thread->samples, externalCache );
                     } );
                     idx++;
                 }
@@ -934,7 +953,7 @@ void View::DrawFlameGraph()
 
     if( m_flameGraphData.empty() )
     {
-        ImGui::PushFont( m_bigFont );
+        ImGui::PushFont( g_fonts.normal, FontBig );
         ImGui::Dummy( ImVec2( 0, ( region.y - ImGui::GetTextLineHeight() * 2 ) * 0.5f ) );
         TextCentered( ICON_FA_CAT );
         TextCentered( "No data available to display" );

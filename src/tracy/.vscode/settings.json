@@ -1,10 +1,10 @@
 {
-    "cmake.configureOnOpen": true,
     "cmake.sourceDirectory": [
         "${workspaceFolder}/profiler",
         "${workspaceFolder}/capture",
         "${workspaceFolder}/csvexport",
         "${workspaceFolder}/import",
+        "${workspaceFolder}/merge",
         "${workspaceFolder}/update",
         "${workspaceFolder}/test",
         "${workspaceFolder}",

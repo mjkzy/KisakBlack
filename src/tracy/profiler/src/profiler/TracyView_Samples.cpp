@@ -10,11 +10,12 @@
 #include "TracyTimelineDraw.hpp"
 #include "TracyView.hpp"
 #include "tracy_pdqsort.h"
+#include "../Fonts.hpp"
 
 namespace tracy
 {
 
-void View::DrawSampleList( const TimelineContext& ctx, const std::vector<SamplesDraw>& drawList, const Vector<SampleData>& vec, int offset )
+void View::DrawSampleList( const TimelineContext& ctx, const std::vector<SamplesDraw>& drawList, const Vector<SampleData>& vec, int offset, uint64_t tid )
 {
     const auto& wpos = ctx.wpos;
     const auto ty = ctx.ty;
@@ -66,7 +67,10 @@ void View::DrawSampleList( const TimelineContext& ctx, const std::vector<Samples
                 CallstackTooltip( it->callstack.Val() );
                 if( IsMouseClicked( 0 ) )
                 {
-                    m_callstackInfoWindow = it->callstack.Val();
+                    m_callstackView = {
+                        .id = it->callstack.Val(),
+                        .thread = tid
+                    };
                 }
             }
         }
@@ -109,7 +113,7 @@ void View::DrawSamplesStatistics( Vector<SymList>& data, int64_t timeRange, Accu
 
     if( data.empty() )
     {
-        ImGui::PushFont( m_bigFont );
+        ImGui::PushFont( g_fonts.normal, FontBig );
         ImGui::Dummy( ImVec2( 0, ( ImGui::GetContentRegionAvail().y - ImGui::GetTextLineHeight() * 2 ) * 0.5f ) );
         TextCentered( ICON_FA_HIPPO );
         TextCentered( "No entries to be displayed" );
@@ -843,13 +847,13 @@ void View::DrawSampleParents()
 
         const auto symName = m_worker.GetString( symbol->name );
         const char* normalized = m_vd.shortenName != ShortenName::Never ? ShortenZoneName( ShortenName::OnlyNormalize, symName ) : nullptr;
-        ImGui::PushFont( m_bigFont );
+        ImGui::PushFont( g_fonts.normal, FontBig );
         TextFocused( "Function:", normalized ? normalized : symName );
         if( normalized )
         {
             ImGui::PopFont();
             TooltipNormalizedName( symName, normalized );
-            ImGui::PushFont( m_bigFont );
+            ImGui::PushFont( g_fonts.normal, FontBig );
         }
         if( symbol->isInline )
         {
@@ -955,6 +959,17 @@ void View::DrawSampleParents()
             char buf[64];
             PrintStringPercent( buf, 100. * data[m_sampleParents.sel]->second / excl );
             TextDisabledUnformatted( buf );
+            auto& cs = m_worker.GetParentCallstack( data[m_sampleParents.sel]->first );
+            if( s_config.llm )
+            {
+                ImGui::SameLine();
+                ImGui::Spacing();
+                ImGui::SameLine();
+                if( ImGui::SmallButton( ICON_FA_ROBOT ) )
+                {
+                    AddLlmAttachment( GetCallstackJson( cs.data(), cs.size() ) );
+                }
+            }
             ImGui::SameLine();
             ImGui::Spacing();
             ImGui::SameLine();
@@ -974,7 +989,6 @@ void View::DrawSampleParents()
             ImGui::RadioButton( "Symbol address", &m_showCallstackFrameAddress, 2 );
             ImGui::PopStyleVar();
 
-            auto& cs = m_worker.GetParentCallstack( data[m_sampleParents.sel]->first );
             ImGui::Separator();
             if( ImGui::BeginTable( "##callstack", 4, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY ) )
             {
@@ -996,10 +1010,8 @@ void View::DrawSampleParents()
                     for( uint8_t f=0; f<fsz; f++ )
                     {
                         const auto& frame = frameData->data[f];
-                        auto filename = m_worker.GetString( frame.file );
-                        auto image = frameData->imageName.Active() ? m_worker.GetString( frameData->imageName ) : nullptr;
 
-                        if( IsFrameExternal( filename, image ) )
+                        if( m_worker.IsFrameExternal( frame.file, frameData->imageName ) )
                         {
                             if( !m_showExternalFrames )
                             {
@@ -1012,7 +1024,7 @@ void View::DrawSampleParents()
                         {
                             ImGui::TableNextRow();
                             ImGui::TableNextColumn();
-                            ImGui::PushFont( m_smallFont );
+                            ImGui::PushFont( g_fonts.normal, FontSmall );
                             TextDisabledUnformatted( "external" );
                             ImGui::TableNextColumn();
                             if( external == 1 )
@@ -1036,7 +1048,7 @@ void View::DrawSampleParents()
                         }
                         else
                         {
-                            ImGui::PushFont( m_smallFont );
+                            ImGui::PushFont( g_fonts.normal, FontSmall );
                             TextDisabledUnformatted( "inline" );
                             ImGui::PopFont();
                         }
@@ -1212,7 +1224,7 @@ void View::DrawSampleParents()
                 {
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
-                    ImGui::PushFont( m_smallFont );
+                    ImGui::PushFont( g_fonts.normal, FontSmall );
                     TextDisabledUnformatted( "external" );
                     ImGui::TableNextColumn();
                     if( external == 1 )

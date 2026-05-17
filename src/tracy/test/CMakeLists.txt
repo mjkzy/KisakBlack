@@ -11,6 +11,9 @@ project(
   VERSION ${TRACY_VERSION_STRING})
 
 file(GENERATE OUTPUT .gitignore CONTENT "*")
+set(CMAKE_COLOR_DIAGNOSTICS ON)
+
+option(TRACY_ENABLE "Enable profiling" ON)
 
 # a bit weird but works: include the client cmake config coming from top-level
 # cmake needs us to specify the build subfolder -> client/ this way we can
@@ -18,8 +21,21 @@ file(GENERATE OUTPUT .gitignore CONTENT "*")
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/.. client/)
 
 add_executable(tracy-test test.cpp)
-target_link_options(tracy-test PRIVATE -rdynamic)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_link_options(tracy-test PRIVATE -rdynamic)
+endif()
 target_link_libraries(tracy-test TracyClient)
+
+# Lua support (optional)
+find_package(Lua)
+if(LUA_FOUND)
+  message(STATUS "Lua found, enabling Lua support in tracy-test")
+  target_compile_definitions(tracy-test PRIVATE TRACY_HAS_LUA)
+  target_include_directories(tracy-test PRIVATE ${LUA_INCLUDE_DIR})
+  target_link_libraries(tracy-test ${LUA_LIBRARIES})
+else()
+  message(STATUS "Lua not found, building tracy-test without Lua support")
+endif()
 
 # OS-specific options
 
@@ -29,3 +45,5 @@ endif()
 
 # copy image file in build folder
 configure_file(${CMAKE_CURRENT_LIST_DIR}/image.jpg image.jpg COPYONLY)
+
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT tracy-test)

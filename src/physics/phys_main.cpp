@@ -4192,12 +4192,10 @@ rigid_body_constraint_ragdoll * Phys_CreateSwivel(
         (v31.x) = -(b2_ref_loc.x);
         (v31.y) = -(b2_ref_loc.y);
         (v31.z) = -(b2_ref_loc.z);
-        v30 = -(b1_ref_loc.x);
-        v29 = -(b1_ref_loc.y);
-        //LODWORD(v28) = LODWORD(b1_ref_loc.z) ^ _mask__NegFloat_;
-        (v27.x) = (b1_ref_loc.x);
-        (v27.y) = (b1_ref_loc.y);
-        (v27.z) = (b1_ref_loc.z);
+
+        (v27.x) = -(b1_ref_loc.x);
+        (v27.y) = -(b1_ref_loc.y);
+        (v27.z) = -(b1_ref_loc.z);
         //rigid_body_constraint_ragdoll::set_swivel(
             joint->set_swivel(
             &b1_axis_loc,

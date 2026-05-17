@@ -22,20 +22,16 @@ $226EAEAF211E69CAF5BF90DB1F921A0C axisTable[4] =
   { "n", { 0.0, 0.0, 0.0 } }
 };
 
-
-
 void __cdecl Ragdoll_Clear_f()
 {
-    const char *v0; // eax
     unsigned int ragdoll; // [esp+10h] [ebp-4h]
 
     if ( Cmd_Argc() >= 2 )
     {
-        v0 = Cmd_Argv(1);
-        ragdoll = atoi(v0);
-        if ( ragdoll < 2 )
+        ragdoll = atoi(Cmd_Argv(1));
+        if ( ragdoll < RAGDOLL_MAX_DEFS )
         {
-            memset((unsigned __int8 *)&ragdollDefs[ragdoll], 0, sizeof(RagdollDef));
+            memset(&ragdollDefs[ragdoll], 0, sizeof(RagdollDef));
             Ragdoll_ResetBodiesUsingDef();
         }
     }
@@ -43,32 +39,18 @@ void __cdecl Ragdoll_Clear_f()
 
 void __cdecl Ragdoll_ResetBodiesUsingDef()
 {
-    RagdollBody *body; // [esp+4h] [ebp-Ch]
-    phys_free_list<RagdollBody>::T_internal_base *body_i; // [esp+Ch] [ebp-4h]
-
-    for ( body_i = g_ragdoll_body_pool.m_dummy_head.m_next_T_internal;
-                &g_ragdoll_body_pool != (phys_free_list<RagdollBody> *)body_i;
-                body_i = body_i->m_next_T_internal )
+    for (RagdollBody *body : g_ragdoll_body_pool)
     {
-        body = (RagdollBody *)&body_i[1];
-        if ( !Ragdoll_BodyInUse((RagdollBody *)&body_i[1])
-            && _tlAssert(
-                     "C:\\projects_pc\\cod\\codsrc\\src\\ragdoll\\ragdoll_cmds.cpp",
-                     20,
-                     "Ragdoll_BodyInUse( body )",
-                     "") )
-        {
-            __debugbreak();
-        }
-        if ( Ragdoll_BodyBound(body) )
+        iassert(Ragdoll_BodyInUse(body));
+
+        if (Ragdoll_BodyBound(body))
             Ragdoll_BodyNewState(body, BS_DOBJ_WAIT);
     }
 }
 
 bool __cdecl Ragdoll_BodyBound(RagdollBody *body)
 {
-    if ( !body && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\ragdoll\\ragdoll.h", 306, 0, "%s", "body") )
-        __debugbreak();
+    iassert(body);
     return body->state >= BS_VELOCITY_CAPTURE;
 }
 
@@ -92,79 +74,67 @@ void __cdecl Ragdoll_InitCommands()
 
 void __cdecl Ragdoll_Bone_f()
 {
-    const char *v0; // eax
-    const char *v1; // eax
-    const char *v2; // eax
-    const char *v3; // eax
-    const char *v4; // eax
-    const char *v5; // eax
-    const char *v6; // eax
-    const char *v7; // eax
     unsigned int ragdoll; // [esp+38h] [ebp-18h]
     RagdollDef *def; // [esp+3Ch] [ebp-14h]
     int parentBone; // [esp+40h] [ebp-10h]
     const char *name; // [esp+44h] [ebp-Ch]
-    int i; // [esp+48h] [ebp-8h]
     BoneDef *bone; // [esp+4Ch] [ebp-4h]
 
     if ( Cmd_Argc() >= 12 )
     {
-        v0 = Cmd_Argv(1);
-        ragdoll = atoi(v0);
-        if ( ragdoll < 2 )
+        ragdoll = atoi(Cmd_Argv(1));
+        if (ragdoll >= RAGDOLL_MAX_DEFS)
         {
-            def = &ragdollDefs[ragdoll];
-            if ( def->numBones >= 14 )
+            return;
+        }
+
+        def = &ragdollDefs[ragdoll];
+        if ( def->numBones >= 14 )
+        {
+            Com_Printf(14, "Ragdoll: Too many ragdoll bones, max %d\n", 14);
+            return;
+        }
+
+        bone = &def->boneDefs[def->numBones];
+        for ( int i = 0; i < RAGDOLL_MAX_DEFS; ++i )
+        {
+            bone->animBoneNames[i] = 0;
+            name = Cmd_Argv(i + 2);
+            I_strncpyz(bone->animBoneTextNames[i], name, 20);
+        }
+
+        bone->radius = atof(Cmd_Argv(4));
+        bone->percent = atof(Cmd_Argv(5));
+        bone->mass = atof(Cmd_Argv(6));
+        bone->friction = atof(Cmd_Argv(7));
+        bone->mass = bone->mass * 0.001;
+        parentBone = atoi(Cmd_Argv(8));
+
+        if ( parentBone == -1 )
+        {
+            bone->parentBone = -1;
+        }
+        else
+        {
+            if ( parentBone >= def->numBones )
             {
-                Com_Printf(14, "Ragdoll: Too many ragdoll bones, max %d\n", 14);
+                Com_Printf(14, "Ragdoll: Child bones must come after parent bones: %d\n", parentBone);
                 return;
             }
-            bone = &def->boneDefs[def->numBones];
-            for ( i = 0; i < 2; ++i )
+            bone->parentBone = parentBone;
+        }
+        bone->mirror = atoi(Cmd_Argv(9)) != 0;
+        if ( Ragdoll_ReadGeomType(10, bone) )
+        {
+            bone->buoyancy = atof(Cmd_Argv(11));
+            if ( Ragdoll_ValidatePrecalcBoneDef(def, bone) )
             {
-                bone->animBoneNames[i] = 0;
-                name = Cmd_Argv(i + 2);
-                I_strncpyz(bone->animBoneTextNames[i], name, 20);
-            }
-            v1 = Cmd_Argv(4);
-            bone->radius = atof(v1);
-            v2 = Cmd_Argv(5);
-            bone->percent = atof(v2);
-            v3 = Cmd_Argv(6);
-            bone->mass = atof(v3);
-            v4 = Cmd_Argv(7);
-            bone->friction = atof(v4);
-            bone->mass = bone->mass * 0.001;
-            v5 = Cmd_Argv(8);
-            parentBone = atoi(v5);
-            if ( parentBone == -1 )
-            {
-                bone->parentBone = -1;
+                ++def->numBones;
+                Ragdoll_ResetBodiesUsingDef();
             }
             else
             {
-                if ( parentBone >= def->numBones )
-                {
-                    Com_Printf(14, "Ragdoll: Child bones must come after parent bones: %d\n", parentBone);
-                    return;
-                }
-                bone->parentBone = parentBone;
-            }
-            v6 = Cmd_Argv(9);
-            bone->mirror = atoi(v6) != 0;
-            if ( Ragdoll_ReadGeomType(10, bone) )
-            {
-                v7 = Cmd_Argv(11);
-                bone->buoyancy = atof(v7);
-                if ( Ragdoll_ValidatePrecalcBoneDef(def, bone) )
-                {
-                    ++def->numBones;
-                    Ragdoll_ResetBodiesUsingDef();
-                }
-                else
-                {
-                    Com_Printf(14, "Ragdoll: Bone %d validation failed\n", def->numBones);
-                }
+                Com_Printf(14, "Ragdoll: Bone %d validation failed\n", def->numBones);
             }
         }
     }
@@ -198,24 +168,20 @@ char __cdecl Ragdoll_ReadGeomType(int arg, BoneDef *bone)
 
 void __cdecl Ragdoll_Joint_f()
 {
-    const char *v0; // eax
-    const char *v1; // eax
     unsigned int ragdoll; // [esp+18h] [ebp-Ch]
     RagdollDef *def; // [esp+1Ch] [ebp-8h]
     JointDef *joint; // [esp+20h] [ebp-4h]
 
     if ( Cmd_Argc() >= 4 )
     {
-        v0 = Cmd_Argv(1);
-        ragdoll = atoi(v0);
-        if ( ragdoll < 2 )
+        ragdoll = atoi(Cmd_Argv(1));
+        if ( ragdoll < RAGDOLL_MAX_DEFS )
         {
             def = &ragdollDefs[ragdoll];
             if ( def->numJoints < 28 )
             {
                 joint = &def->jointDefs[def->numJoints];
-                v1 = Cmd_Argv(2);
-                joint->bone = atoi(v1);
+                joint->bone = atoi(Cmd_Argv(2));
                 if ( joint->bone < def->numBones )
                 {
                     if ( joint->bone )
@@ -272,11 +238,6 @@ char __cdecl Ragdoll_ReadJointType(int arg, JointDef *joint)
 
 void __cdecl Ragdoll_Limit_f()
 {
-    const char *v0; // eax
-    const char *v1; // eax
-    const char *v2; // eax
-    const char *v3; // eax
-    const char *v4; // eax
     float v5; // [esp+0h] [ebp-64h]
     float v6; // [esp+4h] [ebp-60h]
     float v7; // [esp+8h] [ebp-5Ch]
@@ -292,29 +253,24 @@ void __cdecl Ragdoll_Limit_f()
 
     if ( Cmd_Argc() >= 7 )
     {
-        v0 = Cmd_Argv(1);
-        ragdoll = atoi(v0);
-        if ( ragdoll < 2 )
+        ragdoll = atoi(Cmd_Argv(1));
+        if ( ragdoll < RAGDOLL_MAX_DEFS )
         {
             def = &ragdollDefs[ragdoll];
             if ( def->numJoints < 28 )
             {
-                v1 = Cmd_Argv(2);
-                jointNum = atoi(v1);
+                jointNum = atoi(Cmd_Argv(2));
                 if ( jointNum < def->numJoints )
                 {
                     if ( def->jointDefs[jointNum].numLimitAxes < 3 )
                     {
                         if ( Ragdoll_ReadAxis(3, def->jointDefs[jointNum].limitAxes[def->jointDefs[jointNum].numLimitAxes]) )
                         {
-                            v2 = Cmd_Argv(4);
-                            v9 = atof(v2);
+                            v9 = atof(Cmd_Argv(4));
                             def->jointDefs[jointNum].axisFriction[def->jointDefs[jointNum].numLimitAxes] = v9;
-                            v3 = Cmd_Argv(5);
-                            v8 = atof(v3);
+                            v8 = atof(Cmd_Argv(5));
                             def->jointDefs[jointNum].minAngles[def->jointDefs[jointNum].numLimitAxes] = v8 * 0.017453292;
-                            v4 = Cmd_Argv(6);
-                            v7 = atof(v4);
+                            v7 = atof(Cmd_Argv(6));
                             def->jointDefs[jointNum].maxAngles[def->jointDefs[jointNum].numLimitAxes] = v7 * 0.017453292;
                             v12 = def->jointDefs[jointNum].minAngles[def->jointDefs[jointNum].numLimitAxes];
                             if ( (float)(v12 - 3.1415927) < 0.0 )
@@ -384,9 +340,7 @@ char __cdecl Ragdoll_ReadAxis(int arg, float *dest)
                 break;
         }
         axis = axisTable[idx].axis;
-        *dest = *axis;
-        dest[1] = axis[1];
-        dest[2] = axis[2];
+        Vec3Copy(axis, dest);
         if ( negate )
         {
             //*(unsigned int *)dest ^= _mask__NegFloat_;
@@ -401,7 +355,7 @@ char __cdecl Ragdoll_ReadAxis(int arg, float *dest)
     else
     {
         Com_Printf(14, "Ragdoll: Missing axis arg %d\n", arg);
-        *dest = 0.0f;
+        dest[0] = 0.0f;
         dest[1] = 0.0f;
         dest[2] = 0.0f;
         return 0;
@@ -410,8 +364,6 @@ char __cdecl Ragdoll_ReadAxis(int arg, float *dest)
 
 void __cdecl Ragdoll_Selfpair_f()
 {
-    const char *v0; // eax
-    const char *v1; // eax
     unsigned int ragdoll; // [esp+18h] [ebp-10h]
     RagdollDef *def; // [esp+1Ch] [ebp-Ch]
     SelfPairDef *pair; // [esp+20h] [ebp-8h]
@@ -419,18 +371,16 @@ void __cdecl Ragdoll_Selfpair_f()
 
     if ( Cmd_Argc() >= 4 )
     {
-        v0 = Cmd_Argv(1);
-        ragdoll = atoi(v0);
-        if ( ragdoll < 2 )
+        ragdoll = atoi(Cmd_Argv(1));
+        if ( ragdoll < RAGDOLL_MAX_DEFS )
         {
             def = &ragdollDefs[ragdoll];
             if ( def->numSelfPairs < 33 )
             {
                 pair = &def->selfPairDefs[def->numSelfPairs];
-                for ( i = 0; i < 2; ++i )
+                for ( i = 0; i < RAGDOLL_MAX_DEFS; ++i )
                 {
-                    v1 = Cmd_Argv(i + 2);
-                    pair->bones[i] = atoi(v1);
+                    pair->bones[i] = atoi(Cmd_Argv(i + 2));
                     if ( pair->bones[i] > def->numBones )
                     {
                         Com_Printf(14, "Ragdoll: Bad self collision pair bone %d\n", pair->bones[i]);
@@ -450,9 +400,6 @@ void __cdecl Ragdoll_Selfpair_f()
 
 void __cdecl Ragdoll_BaseLerpBone_f()
 {
-    const char *v0; // eax
-    const char *v1; // eax
-    const char *v2; // eax
     int v3; // [esp+0h] [ebp-54h]
     int lerpTime; // [esp+18h] [ebp-3Ch]
     unsigned int ragdoll; // [esp+44h] [ebp-10h]
@@ -462,9 +409,8 @@ void __cdecl Ragdoll_BaseLerpBone_f()
 
     if ( Cmd_Argc() >= 3 )
     {
-        v0 = Cmd_Argv(1);
-        ragdoll = atoi(v0);
-        if ( ragdoll < 2 )
+        ragdoll = atoi(Cmd_Argv(1));
+        if ( ragdoll < RAGDOLL_MAX_DEFS )
         {
             def = &ragdollDefs[ragdoll];
             if ( def->numBaseLerpBones < 9 )
@@ -479,8 +425,7 @@ void __cdecl Ragdoll_BaseLerpBone_f()
                 }
                 else
                 {
-                    v1 = Cmd_Argv(3);
-                    bone->lerpTime = atoi(v1);
+                    bone->lerpTime = atoi(Cmd_Argv(3));
                     if ( bone->lerpTime < 6000 )
                         lerpTime = bone->lerpTime;
                     else
@@ -497,8 +442,7 @@ void __cdecl Ragdoll_BaseLerpBone_f()
                 }
                 else
                 {
-                    v2 = Cmd_Argv(4);
-                    bone->parentBoneIndex = atoi(v2);
+                    bone->parentBoneIndex = atoi(Cmd_Argv(4));
                 }
                 ++def->numBaseLerpBones;
             }
@@ -512,8 +456,6 @@ void __cdecl Ragdoll_BaseLerpBone_f()
 
 void __cdecl Ragdoll_PinBone_f()
 {
-    const char *v0; // eax
-    const char *v1; // eax
     unsigned int ragdoll; // [esp+20h] [ebp-10h]
     RagdollDef *def; // [esp+24h] [ebp-Ch]
     const char *name; // [esp+28h] [ebp-8h]
@@ -521,9 +463,8 @@ void __cdecl Ragdoll_PinBone_f()
 
     if ( Cmd_Argc() >= 3 )
     {
-        v0 = Cmd_Argv(1);
-        ragdoll = atoi(v0);
-        if ( ragdoll < 2 )
+        ragdoll = atoi(Cmd_Argv(1));
+        if ( ragdoll < RAGDOLL_MAX_DEFS )
         {
             def = &ragdollDefs[ragdoll];
             if ( def->numBaseLerpBones < 9 )
@@ -533,8 +474,7 @@ void __cdecl Ragdoll_PinBone_f()
                 bone->animBoneName = SL_FindString(name, SCRIPTINSTANCE_SERVER);
                 if ( bone->animBoneName )
                 {
-                    v1 = Cmd_Argv(3);
-                    bone->parentBoneIndex = atoi(v1);
+                    bone->parentBoneIndex = atoi(Cmd_Argv(3));
                     if ( bone->parentBoneIndex < def->numBones )
                     {
                         bone->lerpTime = 0;

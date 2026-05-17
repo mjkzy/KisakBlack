@@ -3,6 +3,7 @@
 #include "TracyPrint.hpp"
 #include "TracyTexture.hpp"
 #include "TracyView.hpp"
+#include "../Fonts.hpp"
 
 namespace tracy
 {
@@ -15,7 +16,6 @@ bool View::DrawConnection()
 {
     const auto scale = GetScale();
     const auto ty = ImGui::GetTextLineHeight();
-    const auto cs = ty * 0.9f;
     const auto isConnected = m_worker.IsConnected();
     size_t sendQueue;
 
@@ -33,7 +33,8 @@ bool View::DrawConnection()
         {
             sprintf( buf, "%6.2f Mbps", mbps );
         }
-        ImGui::Dummy( ImVec2( cs, 0 ) );
+        ImGui::AlignTextToFramePadding();
+        TextColoredUnformatted( isConnected ? 0xFF2222CC : 0xFF444444, ICON_FA_CIRCLE );
         ImGui::SameLine();
         ImGui::PlotLines( buf, mbpsVector.data(), mbpsVector.size(), 0, nullptr, 0, std::numeric_limits<float>::max(), ImVec2( 150 * scale, 0 ) );
         TextDisabledUnformatted( "Ratio" );
@@ -76,11 +77,9 @@ bool View::DrawConnection()
         }
     }
 
-    const auto wpos = ImGui::GetWindowPos() + ImGui::GetWindowContentRegionMin();
-    ImGui::GetWindowDrawList()->AddCircleFilled( wpos + ImVec2( 1 + cs * 0.5, 3 + ty * 1.75 ), cs * 0.5, isConnected ? 0xFF2222CC : 0xFF444444, 10 );
-
+    FrameImage lastFrameImage{};
     {
-        std::lock_guard<std::mutex> lock( m_worker.GetDataLock() );
+        Worker::MainThreadDataLockGuard lock = m_worker.ObtainLockForMainThread();
         ImGui::SameLine();
         TextFocused( "+", RealToString( m_worker.GetSendInFlight() ) );
         const auto sz = m_worker.GetFrameCount( *m_frames );
@@ -93,29 +92,16 @@ bool View::DrawConnection()
             ImGui::Text( "%6.1f", fps );
             ImGui::SameLine();
             TextFocused( "Frame time:", TimeToString( dt ) );
-        }
+        }        
+        const auto& fis = m_worker.GetFrameImages();
+        // Keep a copy here since the worker may modify the frame images vector while we do not own the lock
+        if( !fis.empty() ) lastFrameImage = *fis.back();
     }
 
-    const auto& fis = m_worker.GetFrameImages();
-    if( !fis.empty() )
+    if( lastFrameImage.ptr.get() )
     {
-        const auto fiScale = scale * 0.5f;
-        const auto& fi = fis.back();
-        if( fi != m_frameTextureConnPtr )
-        {
-            if( !m_frameTextureConn ) m_frameTextureConn = MakeTexture();
-            UpdateTexture( m_frameTextureConn, m_worker.UnpackFrameImage( *fi ), fi->w, fi->h );
-            m_frameTextureConnPtr = fi;
-        }
         ImGui::Separator();
-        if( fi->flip )
-        {
-            ImGui::Image( m_frameTextureConn, ImVec2( fi->w * fiScale, fi->h * fiScale ), ImVec2( 0, 1 ), ImVec2( 1, 0 ) );
-        }
-        else
-        {
-            ImGui::Image( m_frameTextureConn, ImVec2( fi->w * fiScale, fi->h * fiScale ) );
-        }
+        DrawFrameImage( m_FrameTextureCacheConnection, lastFrameImage, scale * 0.5f );
     }
 
     ImGui::Separator();
@@ -144,7 +130,7 @@ bool View::DrawConnection()
 
     ImGui::SameLine( 0, 2 * ty );
     const char* stopStr = ICON_FA_PLUG " Stop";
-    std::lock_guard<std::mutex> lock( m_worker.GetDataLock() );
+    Worker::MainThreadDataLockGuard lock = m_worker.ObtainLockForMainThread();
     if( !m_disconnectIssued && m_worker.IsConnected() )
     {
         if( ImGui::Button( stopStr ) )
@@ -168,7 +154,7 @@ bool View::DrawConnection()
 
     if( ImGui::BeginPopupModal( "Confirm trace discard", nullptr, ImGuiWindowFlags_AlwaysAutoResize ) )
     {
-        ImGui::PushFont( m_bigFont );
+        ImGui::PushFont( g_fonts.normal, FontBig );
         TextCentered( ICON_FA_TRIANGLE_EXCLAMATION );
         ImGui::PopFont();
         ImGui::TextUnformatted( "All unsaved profiling data will be lost!" );

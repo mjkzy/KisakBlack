@@ -9,6 +9,7 @@
 #include "r_foliage.h"
 #include "r_warn.h"
 #include "rb_draw3d.h"
+#include <universal/profile.h>
 
 unsigned __int8 gNvFloatZTech_Intz[70] =
 {
@@ -285,6 +286,8 @@ int __cdecl R_SetTechnique(
                 const GfxDrawSurfListInfo *info,
                 GfxDrawSurf drawSurf)
 {
+    PROF_SCOPED("R_SetTechnique");
+
     unsigned __int64 v5; // rax
     GfxDrawSurf overrideDrawSurf; // [esp+8h] [ebp-10h]
     unsigned __int8 techType; // [esp+13h] [ebp-5h]

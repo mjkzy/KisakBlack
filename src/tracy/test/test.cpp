@@ -7,6 +7,16 @@
 #include <stdlib.h>
 #include "tracy/Tracy.hpp"
 
+#ifdef TRACY_HAS_LUA
+extern "C"
+{
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}
+#include "tracy/TracyLua.hpp"
+#endif
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_JPEG
 #include "stb_image.h"
@@ -15,8 +25,13 @@ struct static_init_test_t
 {
     static_init_test_t()
     {
+#ifdef TRACY_MANUAL_LIFETIME
+        tracy::StartupProfiler();
+#endif
         ZoneScoped;
         ZoneTextF( "Static %s", "init test" );
+        TracyLogString( tracy::MessageSeverity::Info, 0, TRACY_CALLSTACK, "Static init" );
+
         new char[64*1024];
     }
 };
@@ -49,16 +64,18 @@ void operator delete( void* ptr ) noexcept
     free( ptr );
 }
 
+// We need to have the same pointer for both TracyAllocNS and TracyFreeNS
+static const char* customAllocStr = "Custom alloc";
 void* CustomAlloc( size_t count )
 {
     auto ptr = malloc( count );
-    TracyAllocNS( ptr, count, 10, "Custom alloc" );
+    TracyAllocNS( ptr, count, 10, customAllocStr );
     return ptr;
 }
 
 void CustomFree( void* ptr )
 {
-    TracyFreeNS( ptr, 10, "Custom alloc" );
+    TracyFreeNS( ptr, 10, customAllocStr );
     free( ptr );
 }
 
@@ -149,13 +166,13 @@ void RecLock()
     {
         std::this_thread::sleep_for( std::chrono::milliseconds( 7 ) );
         std::lock_guard<LockableBase( std::recursive_mutex )> lock1( recmutex );
-        TracyMessageL( "First lock" );
+        TracyLogString( tracy::MessageSeverity::Trace, 0, TRACY_CALLSTACK, "First lock" );
         LockMark( recmutex );
         ZoneScoped;
         {
             std::this_thread::sleep_for( std::chrono::milliseconds( 3 ) );
             std::lock_guard<LockableBase( std::recursive_mutex )> lock2( recmutex );
-            TracyMessageL( "Second lock" );
+            TracyLogString( tracy::MessageSeverity::Trace, 0, TRACY_CALLSTACK, "Second lock" );
             LockMark( recmutex );
             std::this_thread::sleep_for( std::chrono::milliseconds( 2 ) );
         }
@@ -205,6 +222,7 @@ void DepthTest()
     tracy::SetThreadName( "Depth test" );
     for(;;)
     {
+        TracyLogString( tracy::MessageSeverity::Debug, 0, TRACY_CALLSTACK, "Fibonacci Sleep" );
         std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
         ZoneScoped;
         const auto txt = "Fibonacci (15)";
@@ -322,27 +340,107 @@ void ArenaAllocatorTest()
     auto arena = (char*)0x12345678;
     auto aptr = arena;
 
+    // We need to have the same pointer for both TracyAllocN and TracyMemoryDiscard
+    static const char* arenaAllocName = "Arena alloc";
     for( int i=0; i<10; i++ )
     {
         for( int j=0; j<10; j++ )
         {
             const auto allocSize = 1024 + j * 128 - i * 64;
-            TracyAllocN( aptr, allocSize, "Arena alloc" );
+            TracyAllocN( aptr, allocSize, arenaAllocName );
             aptr += allocSize;
             std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
         }
-        TracyMemoryDiscard( "Arena alloc" );
+        TracyMemoryDiscard( arenaAllocName );
         aptr = arena;
         std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
     }
 }
 
+#ifdef TRACY_HAS_LUA
+
+void LuaTest()
+{
+    tracy::SetThreadName( "Lua test" );
+
+    lua_State* L = luaL_newstate();
+    luaL_openlibs( L );
+    tracy::LuaRegister( L );
+
+    const char* luaScript = R"(
+        for i = 1, 10 do
+            tracy.ZoneBeginN("Lua iteration")
+            tracy.ZoneText("Iteration: " .. i)
+            tracy.Message("Lua message: " .. i)
+            tracy.ZoneEnd()
+        end
+    )";
+
+    for(;;)
+    {
+        std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+        ZoneScopedN( "Lua script execution" );
+
+        if( luaL_dostring( L, luaScript ) != 0 )
+        {
+            const char* error = lua_tostring( L, -1 );
+            TracyLogString( tracy::MessageSeverity::Error, 0, TRACY_CALLSTACK, error );
+            lua_pop( L, 1 );
+        }
+
+        std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+    }
+
+    lua_close( L );
+}
+
+void LuaHookTest()
+{
+    tracy::SetThreadName( "Lua hook test" );
+
+    lua_State* L = luaL_newstate();
+    luaL_openlibs( L );
+    tracy::LuaRegister( L );
+
+    // Enable Lua hook for automatic function profiling
+    lua_sethook( L, tracy::LuaHook, LUA_MASKCALL | LUA_MASKRET, 0 );
+
+    const char* luaScript = R"(
+        function fibonacci(n)
+            if n < 2 then
+                return n
+            end
+            return fibonacci(n-1) + fibonacci(n-2)
+        end
+
+        for i = 1, 5 do
+            local result = fibonacci(10)
+        end
+    )";
+
+    for(;;)
+    {
+        std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+        ZoneScopedN( "Lua hook script execution" );
+
+        if( luaL_dostring( L, luaScript ) != 0 )
+        {
+            const char* error = lua_tostring( L, -1 );
+            TracyLogString( tracy::MessageSeverity::Error, 0, TRACY_CALLSTACK, error );
+            lua_pop( L, 1 );
+        }
+
+        std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+    }
+
+    lua_close( L );
+}
+
+#endif
+
 int main()
 {
-#ifdef _WIN32
-    signal( SIGUSR1, SignalHandler_TriggerCrash );
-    signal( SIGUSR2, SignalHandler_TriggerInstrumentationFailure );
-#else
+#ifndef _WIN32
     struct sigaction sigusr1, oldsigusr1,sigusr2, oldsigusr2 ;
     memset( &sigusr1, 0, sizeof( sigusr1 ) );
     sigusr1.sa_handler = SignalHandler_TriggerCrash;
@@ -378,6 +476,10 @@ int main()
     auto t21 = std::thread( DeadlockTest1 );
     auto t22 = std::thread( DeadlockTest2 );
     auto t23 = std::thread( ArenaAllocatorTest );
+#ifdef TRACY_HAS_LUA
+    auto t24 = std::thread( LuaTest );
+    auto t25 = std::thread( LuaHookTest );
+#endif
 
     int x, y;
     auto image = stbi_load( "image.jpg", &x, &y, nullptr, 4 );
@@ -388,6 +490,17 @@ int main()
     for(;;)
     {
         TracyMessageL( "Tick" );
+
+        const int randValue = rand();
+        if( ( randValue % 100 ) == 0 ) 
+            TracyLogString( tracy::MessageSeverity::Warning, 0, TRACY_CALLSTACK, "Random warning" );
+
+        if( ( randValue % 500 ) == 0 ) 
+            TracyLogString( tracy::MessageSeverity::Error, 0, TRACY_CALLSTACK, "Random error" );
+
+        if( ( randValue % 1000 ) == 0 ) 
+            TracyLogString( tracy::MessageSeverity::Fatal, 0, TRACY_CALLSTACK, "Random fatal error" );
+    
         std::this_thread::sleep_for( std::chrono::milliseconds( 2 ) );
         {
             ZoneScoped;

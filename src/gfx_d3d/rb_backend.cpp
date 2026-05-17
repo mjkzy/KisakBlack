@@ -718,7 +718,6 @@ void R_ResolveIntZ_PC()
 
     iassert(dx.supportsIntZ);
 
-    // LWSS: this library sucks and inside it will spam dx9 CreateQuery()
 #ifdef KISAK_NVAPI_INTZ
     if (dx.nvInitialized)
     {
@@ -1588,6 +1587,8 @@ void __cdecl RB_SetEyeOffsetConstant(GfxCmdBufSourceState *source, const float *
 
 void __cdecl R_DrawSurfs(GfxCmdBufContext context, GfxCmdBufState *prepassState, const GfxDrawSurfListInfo *info)
 {
+    PROF_SCOPED("R_DrawSurfs");
+
     float v3; // [esp+10h] [ebp-58h]
     float v4; // [esp+14h] [ebp-54h]
     float v5; // [esp+18h] [ebp-50h]
@@ -1678,6 +1679,8 @@ void __cdecl R_DrawSurfs(GfxCmdBufContext context, GfxCmdBufState *prepassState,
 
 unsigned int __cdecl R_RenderDrawSurfListMaterial(const GfxDrawSurfListArgs *listArgs, GfxCmdBufContext prepassContext)
 {
+    PROF_SCOPED("RenderMatBatch");
+
     const ShaderConstantSet *v3; // eax
     unsigned int v5; // [esp+10h] [ebp-B8h]
     unsigned int v6; // [esp+14h] [ebp-B4h]

@@ -49,7 +49,7 @@ void __cdecl G_PushEntity(gentity_s *check, gentity_s *pusher, const float *move
 char __cdecl IsEntityLinkedToMe(gentity_s *self, gentity_s *other);
 gentity_s *__cdecl GetEntity(const unsigned __int16 *targetname);
 void    CreateConstraint(PhysConstraint *constraint);
-void __cdecl DeleteConstraint(phys_free_list<RagdollBody>::T_internal_base *rope_index);
+void __cdecl DeleteConstraint(int rope_index);
 void __cdecl G_MoverTeam(gentity_s *ent, mover_info_t *mi);
 void __cdecl G_MoverPush(gentity_s *pusher, mover_info_t *mi);
 void __cdecl G_CalcEntityPhysicsPositions(gentity_s *ent);

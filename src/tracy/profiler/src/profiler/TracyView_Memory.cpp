@@ -5,6 +5,7 @@
 #include "TracyPrint.hpp"
 #include "TracyView.hpp"
 #include "tracy_pdqsort.h"
+#include "../Fonts.hpp"
 
 namespace tracy
 {
@@ -200,7 +201,7 @@ void View::DrawMemory()
     if( mem.data.empty() )
     {
         const auto ty = ImGui::GetTextLineHeight();
-        ImGui::PushFont( m_bigFont );
+        ImGui::PushFont( g_fonts.normal, FontBig );
         ImGui::Dummy( ImVec2( 0, ( ImGui::GetContentRegionAvail().y - ImGui::GetTextLineHeight() * 2 ) * 0.5f ) );
         TextCentered( ICON_FA_DOG );
         TextCentered( "No memory data collected" );
@@ -561,7 +562,7 @@ void View::DrawMemoryAllocWindow()
         if( ev.CsAlloc() != 0 )
         {
             const auto cs = ev.CsAlloc();
-            SmallCallstackButton( ICON_FA_ALIGN_JUSTIFY, cs, idx );
+            SmallCallstackButton( ICON_FA_ALIGN_JUSTIFY, cs, idx, tidAlloc );
             ImGui::SameLine();
             DrawCallstackCalls( cs, 4 );
         }
@@ -587,7 +588,7 @@ void View::DrawMemoryAllocWindow()
             if( ev.csFree.Val() != 0 )
             {
                 const auto cs = ev.csFree.Val();
-                SmallCallstackButton( ICON_FA_ALIGN_JUSTIFY, cs, idx );
+                SmallCallstackButton( ICON_FA_ALIGN_JUSTIFY, cs, idx, tidFree );
                 ImGui::SameLine();
                 DrawCallstackCalls( cs, 4 );
             }
@@ -730,7 +731,7 @@ void View::ListMemData( std::vector<const MemEvent*>& vec, const std::function<v
                 auto v = vec[i];
                 const auto arrIdx = std::distance( mem.data.begin(), v );
 
-                ImGui::PushFont( m_fixedFont );
+                ImGui::PushFont( g_fonts.mono, FontNormal );
                 if( m_memoryAllocInfoPool == pool && m_memoryAllocInfoWindow == arrIdx )
                 {
                     ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 1.f, 0.f, 0.f, 1.f ) );
@@ -887,7 +888,7 @@ void View::ListMemData( std::vector<const MemEvent*>& vec, const std::function<v
                 }
                 else
                 {
-                    SmallCallstackButton( "alloc", v->CsAlloc(), idx );
+                    SmallCallstackButton( "alloc", v->CsAlloc(), idx, m_worker.DecompressThread( v->ThreadAlloc() ) );
                 }
                 ImGui::SameLine();
                 ImGui::Spacing();
@@ -898,7 +899,7 @@ void View::ListMemData( std::vector<const MemEvent*>& vec, const std::function<v
                 }
                 else
                 {
-                    SmallCallstackButton( "free", v->csFree.Val(), idx );
+                    SmallCallstackButton( "free", v->csFree.Val(), idx, m_worker.DecompressThread( v->ThreadFree() ) );
                 }
             }
         }

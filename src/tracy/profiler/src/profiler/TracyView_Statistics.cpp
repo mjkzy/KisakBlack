@@ -5,6 +5,7 @@
 #include "TracyPrint.hpp"
 #include "TracyView.hpp"
 #include "tracy_pdqsort.h"
+#include "../Fonts.hpp"
 
 namespace tracy
 {
@@ -47,12 +48,12 @@ void View::DrawStatistics()
     if( !m_worker.AreSourceLocationZonesReady() && ( !m_worker.AreCallstackSamplesReady() || m_worker.GetCallstackSampleCount() == 0 ) )
     {
         const auto ty = ImGui::GetTextLineHeight();
-        ImGui::PushFont( m_bigFont );
+        ImGui::PushFont( g_fonts.normal, FontBig );
         ImGui::Dummy( ImVec2( 0, ( ImGui::GetContentRegionAvail().y - ImGui::GetTextLineHeight() * 2 - ty ) * 0.5f ) );
         TextCentered( ICON_FA_HIPPO );
-        TextCentered( "Please wait, computing data..." );
+        TextCentered( "Please wait, computing data…" );
         ImGui::PopFont();
-        DrawWaitingDots( s_time );
+        DrawWaitingDotsCentered( s_time );
         ImGui::End();
         return;
     }
@@ -103,8 +104,8 @@ void View::DrawStatistics()
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::PopStyleVar();
-            ImGui::TextWrapped( "Please wait, computing data..." );
-            DrawWaitingDots( s_time );
+            ImGui::TextWrapped( "Please wait, computing data…" );
+            DrawWaitingDotsCentered( s_time );
             ImGui::End();
             return;
         }
@@ -326,8 +327,8 @@ void View::DrawStatistics()
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::PopStyleVar();
-            ImGui::TextWrapped( "Please wait, computing data..." );
-            DrawWaitingDots( s_time );
+            ImGui::TextWrapped( "Please wait, computing data…" );
+            DrawWaitingDotsCentered( s_time );
             ImGui::End();
             return;
         }
@@ -517,7 +518,13 @@ void View::DrawStatistics()
         ImGui::SameLine();
         ImGui::Spacing();
         ImGui::SameLine();
-        ImGui::Checkbox( ICON_FA_HAT_WIZARD " Include kernel", &m_statShowKernel );
+        ImGui::Checkbox( ICON_FA_SHIELD_HALVED " External", &m_statShowExternal );
+        ImGui::SameLine();
+        ImGui::Spacing();
+        ImGui::SameLine();
+        if( !m_statShowExternal ) ImGui::BeginDisabled();
+        ImGui::Checkbox( ICON_FA_HAT_WIZARD " Kernel", &m_statShowKernel );
+        if( !m_statShowExternal ) ImGui::EndDisabled();
         ImGui::SameLine();
         ImGui::Spacing();
         ImGui::SameLine();
@@ -596,7 +603,7 @@ void View::DrawStatistics()
     {
         if( srcloc.empty() )
         {
-            ImGui::PushFont( m_bigFont );
+            ImGui::PushFont( g_fonts.normal, FontBig );
             ImGui::Dummy( ImVec2( 0, ( ImGui::GetContentRegionAvail().y - ImGui::GetTextLineHeight() * 2 ) * 0.5f ) );
             TextCentered( ICON_FA_HIPPO );
             TextCentered( "No entries to be displayed" );
@@ -798,13 +805,17 @@ void View::DrawStatistics()
         if( m_showAllSymbols )
         {
             data.reserve( symMap.size() );
-            if( m_statisticsFilter.IsActive() || m_statisticsImageFilter.IsActive() || !m_statShowKernel )
+            if( m_statisticsFilter.IsActive() || m_statisticsImageFilter.IsActive() || !m_statShowKernel || !m_statShowExternal )
             {
                 for( auto& v : symMap )
                 {
                     const auto name = m_worker.GetString( v.second.name );
                     const auto image = m_worker.GetString( v.second.imageName );
-                    bool pass = ( m_statShowKernel || ( v.first >> 63 ) == 0 ) && m_statisticsFilter.PassFilter( name ) && m_statisticsImageFilter.PassFilter( image );
+                    bool pass =
+                        ( m_statShowKernel || ( v.first >> 63 ) == 0 ) &&
+                        ( m_statShowExternal || !m_worker.IsFrameExternal( v.second.file, v.second.imageName ) ) &&
+                        m_statisticsFilter.PassFilter( name ) &&
+                        m_statisticsImageFilter.PassFilter( image );
                     if( !pass && v.second.size.Val() == 0 )
                     {
                         const auto parentAddr = m_worker.GetSymbolForAddress( v.first );
@@ -814,7 +825,11 @@ void View::DrawStatistics()
                             if( pit != symMap.end() )
                             {
                                 const auto parentName = m_worker.GetString( pit->second.name );
-                                pass = ( m_statShowKernel || ( parentAddr >> 63 ) == 0 ) && m_statisticsFilter.PassFilter( parentName ) && m_statisticsImageFilter.PassFilter( image );
+                                pass =
+                                    ( m_statShowKernel || ( parentAddr >> 63 ) == 0 ) &&
+                                    ( m_statShowExternal || !m_worker.IsFrameExternal( pit->second.file, v.second.imageName ) ) &&
+                                    m_statisticsFilter.PassFilter( parentName ) &&
+                                    m_statisticsImageFilter.PassFilter( image );
                             }
                         }
                     }
@@ -901,7 +916,7 @@ void View::DrawStatistics()
         else
         {
             data.reserve( symStat.size() );
-            if( m_statisticsFilter.IsActive() || m_statisticsImageFilter.IsActive() || !m_statShowKernel )
+            if( m_statisticsFilter.IsActive() || m_statisticsImageFilter.IsActive() || !m_statShowKernel || !m_statShowExternal )
             {
                 for( auto& v : symStat )
                 {
@@ -910,7 +925,11 @@ void View::DrawStatistics()
                     {
                         const auto name = m_worker.GetString( sit->second.name );
                         const auto image = m_worker.GetString( sit->second.imageName );
-                        bool pass = ( m_statShowKernel || ( v.first >> 63 ) == 0 ) && m_statisticsFilter.PassFilter( name ) && m_statisticsImageFilter.PassFilter( image );
+                        bool pass =
+                            ( m_statShowKernel || ( v.first >> 63 ) == 0 ) &&
+                            ( m_statShowExternal || !m_worker.IsFrameExternal( sit->second.file, sit->second.imageName ) ) &&
+                            m_statisticsFilter.PassFilter( name ) &&
+                            m_statisticsImageFilter.PassFilter( image );
                         if( !pass && sit->second.size.Val() == 0 )
                         {
                             const auto parentAddr = m_worker.GetSymbolForAddress( v.first );
@@ -920,7 +939,11 @@ void View::DrawStatistics()
                                 if( pit != symMap.end() )
                                 {
                                     const auto parentName = m_worker.GetString( pit->second.name );
-                                    pass = ( m_statShowKernel || ( parentAddr >> 63 ) == 0 ) && m_statisticsFilter.PassFilter( parentName ) && m_statisticsImageFilter.PassFilter( image );
+                                    pass =
+                                        ( m_statShowKernel || ( parentAddr >> 63 ) == 0 ) &&
+                                        ( m_statShowExternal || !m_worker.IsFrameExternal( pit->second.file, sit->second.imageName ) ) &&
+                                        m_statisticsFilter.PassFilter( parentName ) &&
+                                        m_statisticsImageFilter.PassFilter( image );
                                 }
                             }
                         }

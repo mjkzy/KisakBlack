@@ -685,7 +685,10 @@ void __cdecl RB_StandardDrawCommands(GfxViewInfo *viewInfo)
       R_ClearScreen(gfxCmdBufState.prim.device, 7u, clearColor, 1.0, 0, 0);
   }
   memcpy(gfxCmdBufState.refSamplerState, gfxCmdBufState.refSamplerState, sizeof(gfxCmdBufState));
-  if ( needsDepthPrepass )
+  //if ( needsDepthPrepass )
+  // LWSS: wire up this dvar, it's in the game but removed. 
+  // It appears at one point that this was optional but it is now mandatory for some rendering (trees on `mp_mountain`)
+  if ( needsDepthPrepass && r_depthPrepass->current.enabled ) 
   {
     PROF_SCOPED("R_DepthPrepass");
     R_InitContext(data, &cmdBuf);

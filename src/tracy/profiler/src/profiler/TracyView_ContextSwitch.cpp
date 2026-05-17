@@ -7,6 +7,7 @@
 #include "TracyTimelineDraw.hpp"
 #include "TracyView.hpp"
 #include "tracy_pdqsort.h"
+#include "../Fonts.hpp"
 
 namespace tracy
 {
@@ -236,14 +237,14 @@ void View::DrawContextSwitchList( const TimelineContext& ctx, const std::vector<
                         {
                             TextFocused( "Wait reason:", DecodeContextSwitchReasonCode( prev.Reason() ) );
                             ImGui::SameLine();
-                            ImGui::PushFont( m_smallFont );
+                            ImGui::PushFont( g_fonts.normal, FontSmall );
                             ImGui::AlignTextToFramePadding();
                             TextDisabledUnformatted( DecodeContextSwitchReason( prev.Reason() ) );
                             ImGui::PopFont();
                         }
                         TextFocused( "Wait state:", DecodeContextSwitchStateCode( prev.State() ) );
                         ImGui::SameLine();
-                        ImGui::PushFont( m_smallFont );
+                        ImGui::PushFont( g_fonts.normal, FontSmall );
                         ImGui::AlignTextToFramePadding();
                         TextDisabledUnformatted( DecodeContextSwitchState( prev.State() ) );
                         ImGui::PopFont();
@@ -279,7 +280,10 @@ void View::DrawContextSwitchList( const TimelineContext& ctx, const std::vector<
                             CallstackTooltipContents( waitStack );
                             if( ImGui::IsMouseClicked( 0 ) )
                             {
-                                m_callstackInfoWindow = waitStack;
+                                m_callstackView = {
+                                    .id = waitStack,
+                                    .thread = m_worker.DecompressThread( ev.Thread() )
+                                };
                             }
                     }
                     ImGui::EndTooltip();
@@ -473,14 +477,20 @@ void View::DrawWaitStacks()
     auto expand = ImGui::TreeNode( ICON_FA_SHUFFLE " Visible threads:" );
     ImGui::SameLine();
     size_t visibleThreads = 0;
-    for( const auto& t : m_threadOrder ) if( WaitStackThread( t->id ) ) visibleThreads++;
-    if( visibleThreads == m_threadOrder.size() )
+    size_t tsz = 0;
+    for( const auto& t : m_threadOrder )
     {
-        ImGui::TextDisabled( "(%zu)", m_threadOrder.size() );
+        if( t->ctxSwitchSamples.empty() ) continue;
+        if( WaitStackThread( t->id ) ) visibleThreads++;
+        tsz++;
+    }
+    if( visibleThreads == tsz )
+    {
+        ImGui::TextDisabled( "(%zu)", tsz );
     }
     else
     {
-        ImGui::TextDisabled( "(%zi/%zu)", visibleThreads, m_threadOrder.size() );
+        ImGui::TextDisabled( "(%zu/%zu)", visibleThreads, tsz );
     }
     if( expand )
     {
@@ -505,10 +515,31 @@ void View::DrawWaitStacks()
             threadsChanged = true;
         }
 
+        const auto& style = ImGui::GetStyle();
+        const auto cntWidth = ImGui::CalcTextSize( "(1234)" ).x;
+        float probe = 0;
+        for( auto& t : m_threadOrder )
+        {
+            if( t->ctxSwitchSamples.empty() ) continue;
+            float w = ImGui::GetFrameHeight() * 2 + ImGui::CalcTextSize( m_worker.GetThreadName( t->id ) ).x + cntWidth + style.ItemSpacing.x * 3;
+            if( crash.thread == t->id ) w += style.ItemSpacing.x + ImGui::CalcTextSize( ICON_FA_SKULL " Crashed" ).x;
+            if( t->isFiber ) w += style.ItemSpacing.x + ImGui::CalcTextSize( "Fiber" ).x;
+            probe = std::max( probe, w );
+        }
+        const auto MinWidth = std::max( 150 * GetScale(), probe );
+        const int cols = std::max( 1, int( ImGui::GetContentRegionAvail().x / MinWidth ) );
+
+        const auto rows = ( tsz + cols - 1 ) / cols;
+        const auto rowsVisible = std::min<float>( rows, 7.5f );
+        const auto rowsHeight = ImGui::GetTextLineHeightWithSpacing() * rowsVisible;
+        ImGui::BeginChild( "###waitstackthreadrows", ImVec2( -1, rowsHeight ) );
+
         int idx = 0;
+        ImGui::BeginTable( "##waitstackthreadcols", cols, ImGuiTableFlags_NoSavedSettings );
         for( const auto& t : m_threadOrder )
         {
             if( t->ctxSwitchSamples.empty() ) continue;
+            ImGui::TableNextColumn();
             ImGui::PushID( idx++ );
             const auto threadColor = GetThreadColor( t->id, 0 );
             SmallColorBox( threadColor );
@@ -531,6 +562,8 @@ void View::DrawWaitStacks()
                 TextColoredUnformatted( ImVec4( 0.2f, 0.6f, 0.2f, 1.f ), "Fiber" );
             }
         }
+        ImGui::EndTable();
+        ImGui::EndChild();
         ImGui::TreePop();
     }
     if( threadsChanged ) m_waitStack = 0;
@@ -539,7 +572,7 @@ void View::DrawWaitStacks()
     ImGui::BeginChild( "##waitstacks" );
     if( stacks.empty() )
     {
-        ImGui::PushFont( m_bigFont );
+        ImGui::PushFont( g_fonts.normal, FontBig );
         ImGui::Dummy( ImVec2( 0, ( ImGui::GetContentRegionAvail().y - ImGui::GetTextLineHeight() * 2 ) * 0.5f ) );
         TextCentered( ICON_FA_KIWI_BIRD );
         TextCentered( "No wait stacks to display" );
@@ -586,7 +619,7 @@ void View::DrawWaitStacks()
             PrintStringPercent( buf, 100. * data[m_waitStack]->second / totalCount );
             TextDisabledUnformatted( buf );
             ImGui::Separator();
-            DrawCallstackTable( data[m_waitStack]->first, false );
+            DrawCallstackTable( data[m_waitStack]->first, 0, false, false );
             break;
         }
         case 1:

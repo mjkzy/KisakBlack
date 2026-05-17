@@ -2468,7 +2468,7 @@ void __cdecl DynEntCl_EntityImpactEvent(
         if ( cent->pose.isRagdoll )
         {
             MapHitLocationToRagdollBoneName((hitLocation_t)trace->partGroup, &boneName);
-            id = Ragdoll_GetRBForBone((phys_free_list<RagdollBody>::T_internal_base *)trace->hitId, boneName);
+            id = Ragdoll_GetRBForBone(trace->hitId, boneName);
             if ( id )
             {
                 force[0] = *hitPos - *start;

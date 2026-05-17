@@ -1597,7 +1597,7 @@ void __cdecl Rope_Trace(const float *p0, const float *p1)
                                 p[5] = v7;
                                 if ( rope->m_health > 0 && !--rope->m_health )
                                 {
-                                    DeleteConstraint((phys_free_list<RagdollBody>::T_internal_base *)ri);
+                                    DeleteConstraint(ri);
                                     if ( LODWORD(rope->m_particles[24].p_prev[7 * rope->m_num_particles]) == 1 )
                                     {
                                         Rope_RemoveAnchor(ri, 0);

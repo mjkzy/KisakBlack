@@ -1,11 +1,13 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.25)
 
-option(NO_FILESELECTOR "Disable the file selector" OFF)
-option(GTK_FILESELECTOR "Use the GTK file selector on Linux instead of the xdg-portal one" OFF)
-option(LEGACY "Instead of Wayland, use the legacy X11 backend on Linux" OFF)
-option(NO_ISA_EXTENSIONS "Disable ISA extensions (don't pass -march=native or -mcpu=native to the compiler)" OFF)
-option(NO_STATISTICS "Disable calculation of statistics" OFF)
-option(SELF_PROFILE "Enable self-profiling" OFF)
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/options.cmake)
+
+set_option(NO_FILESELECTOR "Disable the file selector" OFF)
+set_option(GTK_FILESELECTOR "Use the GTK file selector on Linux instead of the xdg-portal one" OFF)
+set_option(LEGACY "Instead of Wayland, use the legacy X11 backend on Linux" OFF)
+set_option(NO_STATISTICS "Disable calculation of statistics" OFF)
+set_option(SELF_PROFILE "Enable self-profiling" OFF)
+set_option_value(SANITIZE "Sanitizer parameters" "")
 
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/version.cmake)
 
@@ -22,19 +24,49 @@ if(SELF_PROFILE)
     add_compile_options(-g -O3 -fno-omit-frame-pointer)
 endif()
 
+if(SANITIZE)
+    add_compile_options(-fsanitize=${SANITIZE} -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=${SANITIZE} -fno-omit-frame-pointer)
+endif()
+
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/config.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/vendor.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/server.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/GitRef.cmake)
+
+include(ExternalProject)
+ExternalProject_Add(embed
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/helpers
+    CMAKE_ARGS
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
+)
+
+function(Embed LIST NAME FILE)
+    add_custom_command(
+        OUTPUT data/${NAME}.cpp data/${NAME}.hpp
+        COMMAND ${CMAKE_COMMAND} -E make_directory data
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/embed ${NAME} ${CMAKE_CURRENT_LIST_DIR}/${FILE} data/${NAME}
+        DEPENDS embed ${CMAKE_CURRENT_LIST_DIR}/${FILE}
+    )
+    list(APPEND ${LIST} data/${NAME}.cpp)
+    return(PROPAGATE ${LIST})
+endfunction()
 
 set(SERVER_FILES
     TracyAchievementData.cpp
     TracyAchievements.cpp
     TracyBadVersion.cpp
     TracyColor.cpp
+    TracyConfig.cpp
+    TracyDisassembly.cpp
+    TracyEmbed.cpp
     TracyEventDebug.cpp
     TracyFileselector.cpp
     TracyFilesystem.cpp
     TracyImGui.cpp
+    TracyManualData.cpp
+    TracyMarkdown.cpp
     TracyMicroArchitecture.cpp
     TracyMouse.cpp
     TracyProtoHistory.cpp
@@ -65,6 +97,7 @@ set(SERVER_FILES
     TracyView_FrameTree.cpp
     TracyView_GpuTimeline.cpp
     TracyView_Locks.cpp
+    TracyView_Manual.cpp
     TracyView_Memory.cpp
     TracyView_Messages.cpp
     TracyView_Navigation.cpp
@@ -82,6 +115,16 @@ set(SERVER_FILES
     TracyView_ZoneTimeline.cpp
     TracyWeb.cpp
 )
+
+if(NOT EMSCRIPTEN)
+    list(APPEND SERVER_FILES
+        TracyLlm.cpp
+        TracyLlmApi.cpp
+        TracyLlmChat.cpp
+        TracyLlmEmbeddings.cpp
+        TracyLlmTools.cpp
+    )
+endif()
 
 list(TRANSFORM SERVER_FILES PREPEND "src/profiler/")
 
@@ -101,6 +144,19 @@ set(PROFILER_FILES
     src/winmainArchDiscovery.cpp
 )
 
+Embed(PROFILER_FILES SystemPrompt src/llm/system.prompt.md)
+Embed(PROFILER_FILES SkillCallstack src/llm/skill.callstack.md)
+Embed(PROFILER_FILES SkillOptimization src/llm/skill.optimization.md)
+Embed(PROFILER_FILES ToolsJson src/llm/tools.json)
+Embed(PROFILER_FILES FontFixed src/font/FiraCode-Retina.ttf)
+Embed(PROFILER_FILES FontIcons src/font/Font\ Awesome\ 6\ Free-Solid-900.otf)
+Embed(PROFILER_FILES FontNormal src/font/Roboto-Regular.ttf)
+Embed(PROFILER_FILES FontBold src/font/Roboto-Bold.ttf)
+Embed(PROFILER_FILES FontItalic src/font/Roboto-Italic.ttf)
+Embed(PROFILER_FILES FontBoldItalic src/font/Roboto-BoldItalic.ttf)
+Embed(PROFILER_FILES FontEmoji src/font/NotoEmoji-Regular.ttf)
+Embed(PROFILER_FILES Manual ../manual/tracy.md)
+
 set(INCLUDES "${CMAKE_CURRENT_BINARY_DIR}")
 set(LIBS "")
 
@@ -117,7 +173,7 @@ if(USE_WAYLAND)
     CPMAddPackage(
         NAME wayland-protocols
         GIT_REPOSITORY https://gitlab.freedesktop.org/wayland/wayland-protocols.git
-        GIT_TAG 1.37
+        GIT_TAG 1.47
         DOWNLOAD_ONLY YES
     )
 
@@ -185,32 +241,31 @@ else()
 endif()
 
 find_package(Threads REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE TracyServer TracyImGui Threads::Threads)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    TracyServer
+    TracyImGui
+    Threads::Threads
+    nlohmann_json::nlohmann_json
+    md4c
+)
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${tidy_SOURCE_DIR}/include
+)
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${md4c_SOURCE_DIR}/src
+)
 
-if(NOT DEFINED GIT_REV)
-    set(GIT_REV "HEAD")
+if(NOT EMSCRIPTEN)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        TracyLibcurl
+        base64
+        tidy-static
+        TracyPugixml
+        usearch
+    )
 endif()
 
-find_package(Git)
-if(Git_FOUND)
-    add_custom_target(git-ref
-        COMMAND ${CMAKE_COMMAND} -E echo "#pragma once" > GitRef.hpp.tmp
-        COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_SOURCE_DIR} log -1 "--format=namespace tracy { static inline const char* GitRef = %x22%h%x22; }" ${GIT_REV} >> GitRef.hpp.tmp || echo "namespace tracy { static inline const char* GitRef = \"unknown\"; }" >> GitRef.hpp.tmp
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different GitRef.hpp.tmp GitRef.hpp
-        BYPRODUCTS GitRef.hpp GitRef.hpp.tmp
-        VERBATIM
-    )
-    add_dependencies(${PROJECT_NAME} git-ref)
-else()
-    message(WARNING "git not found, using 'unknown' as git ref.")
-    add_custom_command(
-        OUTPUT GitRef.hpp
-        COMMAND ${CMAKE_COMMAND} -E echo "#pragma once" > GitRef.hpp
-        COMMAND ${CMAKE_COMMAND} -E echo "namespace tracy { static inline const char* GitRef = \"unknown\"; }" >> GitRef.hpp
-        VERBATIM
-    )
-    target_sources(${PROJECT_NAME} PUBLIC GitRef.hpp)
-endif()
+add_git_ref(${PROJECT_NAME})
 
 if(NOT EMSCRIPTEN)
     if(NOT NO_FILESELECTOR)
@@ -222,7 +277,7 @@ if(NOT EMSCRIPTEN)
 endif()
 
 if(EMSCRIPTEN)
-    target_link_options(${PROJECT_NAME} PRIVATE -pthread -sASSERTIONS=0 -sINITIAL_MEMORY=384mb -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=4gb -sSTACK_SIZE=1048576 -sWASM_BIGINT=1 -sPTHREAD_POOL_SIZE=8 -sEXPORTED_FUNCTIONS=_main,_nativeOpenFile -sEXPORTED_RUNTIME_METHODS=ccall -sENVIRONMENT=web,worker --preload-file embed.tracy)
+    target_link_options(${PROJECT_NAME} PRIVATE -pthread -sASSERTIONS=0 -sINITIAL_MEMORY=384mb -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=4gb -sSTACK_SIZE=1048576 -sWASM_BIGINT=1 -sPTHREAD_POOL_SIZE=8 -sEXPORTED_FUNCTIONS=_main,_nativeOpenFile,_tracy_paste_clipboard -sEXPORTED_RUNTIME_METHODS=ccall -sENVIRONMENT=web,worker --preload-file embed.tracy)
 
     file(DOWNLOAD https://share.nereid.pl/i/embed.tracy ${CMAKE_CURRENT_BINARY_DIR}/embed.tracy EXPECTED_MD5 ca0fa4f01e7b8ca5581daa16b16c768d)
     file(COPY ${CMAKE_CURRENT_LIST_DIR}/wasm/index.html DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

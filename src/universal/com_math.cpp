@@ -3320,12 +3320,13 @@ float __cdecl Vec3Distance(const float *v1, const float *v2)
 
 float __cdecl Vec3DistanceSq(const float *p1, const float *p2)
 {
-        float v_4; // [esp+4h] [ebp-8h]
-        float v_8; // [esp+8h] [ebp-4h]
+    float v[3]; // [esp+4h] [ebp-8h]
 
-        v_4 = p2[1] - p1[1];
-        v_8 = p2[2] - p1[2];
-        return v_8 * v_8 + v_4 * v_4 + (float)(*p2 - *p1) * (float)(*p2 - *p1);
+    v[0] = p2[0] - p1[0];
+    v[1] = p2[1] - p1[1];
+    v[2] = p2[2] - p1[2];
+
+    return Vec3LengthSq(v);
 }
 
 float Vec3Normalize(float *v)
@@ -3590,7 +3591,7 @@ void __cdecl Vec3AddScalar(const float *a, float s, float *sum)
 
 void __cdecl Vec3Add(const float *a, const float *b, float *sum)
 {
-    *sum = *a + *b;
+    sum[0] = a[0] + b[0];
     sum[1] = a[1] + b[1];
     sum[2] = a[2] + b[2];
 }
