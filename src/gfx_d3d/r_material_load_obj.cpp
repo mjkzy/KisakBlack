@@ -20,6 +20,8 @@
 #include "r_state.h"
 #include "r_image.h"
 
+#include <d3dx9.h>
+
 MaterialTypeInfo g_materialTypeInfo[5] =
 {
   { "", "", 0u },

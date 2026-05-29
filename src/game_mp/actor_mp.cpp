@@ -159,7 +159,6 @@ int __cdecl Actor_droptofloor(gentity_s *ent)
     trace_t trace; // [esp+4Ch] [ebp-48h] BYREF
     float dropMaxs[3]; // [esp+88h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     //col_context_t::col_context_t(&context);
     vEnd[0] = ent->r.currentOrigin[0];
     vEnd[1] = ent->r.currentOrigin[1];
@@ -1315,15 +1314,11 @@ gentity_s *__fastcall Actor_GetScriptTargetEntity(actor_s *self)
     else
         return 0;
 }
+#define ACTOR_CALL_THINK_REPEAT_MAX 10
 
 void __cdecl Actor_Think(gentity_s *self)
 {
     const char *v1; // eax
-    bool v2; // [esp+0h] [ebp-60h]
-    bool v3; // [esp+4h] [ebp-5Ch]
-    bool v4; // [esp+8h] [ebp-58h]
-    float *oldOrigin; // [esp+24h] [ebp-3Ch]
-    int partBits[5]; // [esp+34h] [ebp-2Ch] BYREF
     bool isRagdoll; // [esp+4Bh] [ebp-15h]
     actor_think_result_t result; // [esp+4Ch] [ebp-14h]
     bool originChanged; // [esp+52h] [ebp-Eh]
@@ -1336,178 +1331,87 @@ void __cdecl Actor_Think(gentity_s *self)
     callThinkCounter = 0;
     if ( g_ai->current.enabled )
     {
-        if ( !self && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp", 1562, 0, "%s", "self") )
-            __debugbreak();
+        iassert(self);
         actor = self->actor;
-        if ( !actor && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp", 1565, 0, "%s", "actor") )
-            __debugbreak();
-        if ( !actor->inuse
-            && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp", 1566, 0, "%s", "actor->inuse") )
-        {
-            __debugbreak();
-        }
+
+        iassert(actor);
+        iassert(actor->inuse);
+
         if ( Com_GetServerDObj(self->s.number) )
         {
-            if ( !actor->ent
-                && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp", 1589, 0, "%s", "actor->ent") )
-            {
-                __debugbreak();
-            }
-            if ( actor->ent != self )
-            {
-                v1 = va("actor->ent->s.number: %d, self->s.number: %d", actor->ent->s.number, self->s.number);
-                if ( !Assert_MyHandler(
-                                "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                                1590,
-                                0,
-                                "%s\n\t%s",
-                                "actor->ent == self",
-                                v1) )
-                    __debugbreak();
-            }
-            if ( !actor->sentient
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                            1591,
-                            0,
-                            "%s",
-                            "actor->sentient") )
-            {
-                __debugbreak();
-            }
-            if ( actor->sentient->ent != self
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                            1592,
-                            0,
-                            "%s",
-                            "actor->sentient->ent == self") )
-            {
-                __debugbreak();
-            }
-            if ( self->sentient != actor->sentient
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                            1593,
-                            0,
-                            "%s",
-                            "self->sentient == actor->sentient") )
-            {
-                __debugbreak();
-            }
-            if ( self->client
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                            1594,
-                            0,
-                            "%s",
-                            "self->client == NULL") )
-            {
-                __debugbreak();
-            }
-            if ( actor->stateLevel >= 6
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                            1595,
-                            0,
-                            "actor->stateLevel doesn't index ARRAY_COUNT( actor->eState )\n\t%i not in [0, %i)",
-                            actor->stateLevel,
-                            6) )
-            {
-                __debugbreak();
-            }
-            if ( (actor->eState[actor->stateLevel] <= AIS_INVALID || actor->eState[actor->stateLevel] >= AIS_COUNT)
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                            1596,
-                            0,
-                            "%s\n\t(actor->eState[actor->stateLevel]) = %i",
-                            "(actor->eState[actor->stateLevel] > AIS_INVALID && actor->eState[actor->stateLevel] < AIS_COUNT)",
-                            actor->eState[actor->stateLevel]) )
-            {
-                __debugbreak();
-            }
-            if ( actor->Path.iPathEndTime < 0
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                            1598,
-                            0,
-                            "%s",
-                            "actor->Path.iPathEndTime >= 0") )
-            {
-                __debugbreak();
-            }
-            if ( actor->Path.iPathEndTime > level.time + 500
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                            1599,
-                            0,
-                            "%s",
-                            "actor->Path.iPathEndTime <= level.time + ACTOR_STOP_TIME") )
-            {
-                __debugbreak();
-            }
+            iassert(actor->ent);
+            iassert(actor->ent == self);
+            iassert(actor->sentient);
+            iassert(actor->sentient->ent == self);
+            iassert(self->sentient == actor->sentient);
+            iassert(self->client == NULL);
+            bcassert(actor->stateLevel, ARRAY_COUNT(actor->eState));
+            iassert(actor->eState[actor->stateLevel] > AIS_INVALID && actor->eState[actor->stateLevel] < AIS_COUNT);
+            iassert(actor->Path.iPathEndTime >= 0);
+            iassert(actor->Path.iPathEndTime <= level.time + ACTOR_STOP_TIME);
+
             if ( actor->Physics.bIsAlive )
                 Actor_UpdatePileUp(actor);
+
             result = ACTOR_THINK_REPEAT;
             while ( result == ACTOR_THINK_REPEAT )
             {
                 result = Actor_CallThink(actor);
-                if ( ++callThinkCounter >= 10
-                    && !Assert_MyHandler(
-                                "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                                1622,
-                                0,
-                                "%s",
-                                "callThinkCounter < ACTOR_CALL_THINK_REPEAT_MAX") )
-                {
-                    __debugbreak();
-                }
+                callThinkCounter++;
+                iassert(callThinkCounter < ACTOR_CALL_THINK_REPEAT_MAX);
             }
-            v4 = self->r.currentOrigin[0] == actor->sentient->oldOrigin[0]
-                && self->r.currentOrigin[1] == actor->sentient->oldOrigin[1]
-                && self->r.currentOrigin[2] == actor->sentient->oldOrigin[2];
-            originChanged = !v4;
-            oldOrigin = actor->sentient->oldOrigin;
-            *oldOrigin = self->r.currentOrigin[0];
-            oldOrigin[1] = self->r.currentOrigin[1];
-            oldOrigin[2] = self->r.currentOrigin[2];
+
+            originChanged = !(self->r.currentOrigin[0] == actor->sentient->oldOrigin[0]
+                           && self->r.currentOrigin[1] == actor->sentient->oldOrigin[1]
+                           && self->r.currentOrigin[2] == actor->sentient->oldOrigin[2]);
+
+            Vec3Copy(self->r.currentOrigin, actor->sentient->oldOrigin);
+
+            // set lerp.pos
             isRagdoll = Com_IsRagdollTrajectory(&self->s.lerp.pos);
             AssignToSmallerType<unsigned char>(&self->s.lerp.pos.trType, isRagdoll ? 14 : 1);
-            self->s.lerp.pos.trBase[0] = self->r.currentOrigin[0];
-            self->s.lerp.pos.trBase[1] = self->r.currentOrigin[1];
-            self->s.lerp.pos.trBase[2] = self->r.currentOrigin[2];
-            v3 = self->r.currentAngles[0] == self->s.lerp.apos.trBase[0]
-                && self->r.currentAngles[1] == self->s.lerp.apos.trBase[1]
-                && self->r.currentAngles[2] == self->s.lerp.apos.trBase[2];
-            anglesChanged = !v3;
-            v2 = originChanged || anglesChanged;
-            updateProne = v2;
+            Vec3Copy(self->r.currentOrigin, self->s.lerp.pos.trBase);
+
+            anglesChanged = !(self->r.currentAngles[0] == self->s.lerp.apos.trBase[0]
+                           && self->r.currentAngles[1] == self->s.lerp.apos.trBase[1]
+                           && self->r.currentAngles[2] == self->s.lerp.apos.trBase[2]);
+
+            updateProne = originChanged || anglesChanged;
+
+            // set lerp.apos
             isRagdoll = Com_IsRagdollTrajectory(&self->s.lerp.apos);
             AssignToSmallerType<unsigned char>(&self->s.lerp.apos.trType, isRagdoll ? 14 : 1);
-            self->s.lerp.apos.trBase[0] = self->r.currentAngles[0];
-            self->s.lerp.apos.trBase[1] = self->r.currentAngles[1];
-            self->s.lerp.apos.trBase[2] = self->r.currentAngles[2];
+            Vec3Copy(self->r.currentAngles, self->s.lerp.apos.trBase);
+
             if ( originChanged )
             {
                 SV_LinkEntity(self);
                 Actor_PostPhysics(&actor->Physics);
             }
+
             if ( Sentient_NearestNodeDirty(actor->sentient, originChanged) )
                 Sentient_InvalidateNearestNode(actor->sentient);
+
             Sentient_BanNearNodes(actor->sentient);
+
             if ( !BG_ActorIsProne(&actor->ProneInfo, level.time) )
                 actor->Physics.prone = 0;
+
             Actor_UpdateLookAt(actor);
+
             if ( actor->delayedDeath && !Actor_InScriptedState(actor) )
                 G_Damage(self, 0, 0, 0, self->r.currentOrigin, self->health + 1, 0, 0, 0xFFFFFFFF, HITLOC_HEAD, 0, 0, 0);
+
             if ( self->actor->Physics.bIsAlive && !self->actor->ignoreTriggers )
                 G_DoTouchTriggers(self);
+
             if ( result != ACTOR_THINK_MOVE_TO_BODY_QUEUE )
                 Actor_CheckNotify(actor);
+
             Actor_UpdateActorInfo(self);
             if ( g_debugLocDamage->current.integer == 1 && SV_DObjExists(self) )
             {
+                int partBits[5]; // [esp+34h] [ebp-2Ch] BYREF
                 memset(partBits, 255, sizeof(partBits));
                 G_DObjCalcPose(self, partBits);
                 SV_XModelDebugBoxes(self, colorWhite, 0, 0);
@@ -1524,7 +1428,7 @@ void __cdecl Actor_Think(gentity_s *self)
             G_FreeEntity(self);
         }
     }
-    else
+    else //     if ( g_ai->current.enabled )
     {
         self->nextthink = level.time + 50;
     }
@@ -2845,14 +2749,7 @@ void __fastcall Actor_DoMove(actor_s *self)
 {
     bool v1; // [esp+18h] [ebp-3C0h]
     bool v2; // [esp+1Ch] [ebp-3BCh]
-    float *v4; // [esp+24h] [ebp-3B4h]
-    float *v5; // [esp+34h] [ebp-3A4h]
-    float *v6; // [esp+3Ch] [ebp-39Ch]
-    float *v7; // [esp+4Ch] [ebp-38Ch]
     float *currentOrigin; // [esp+54h] [ebp-384h]
-    float v9; // [esp+68h] [ebp-370h]
-    float wishdelta_1; // [esp+84h] [ebp-354h]
-    float wishdelta_2; // [esp+88h] [ebp-350h]
     float right[3]; // [esp+8Ch] [ebp-34Ch] BYREF
     float forward[3]; // [esp+98h] [ebp-340h] BYREF
     pathnode_t *node; // [esp+A4h] [ebp-334h]
@@ -2863,80 +2760,35 @@ void __fastcall Actor_DoMove(actor_s *self)
     float deltaHeight; // [esp+B8h] [ebp-320h]
     pathnode_t *pTestNode; // [esp+BCh] [ebp-31Ch]
     pathsort_t nodes[64]; // [esp+C0h] [ebp-318h] BYREF
-    float vOrigin[3]; // [esp+3C4h] [ebp-14h] BYREF
     int bSuccess; // [esp+3D0h] [ebp-8h]
     int i; // [esp+3D4h] [ebp-4h]
 
-    if ( !self && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp", 3090, 0, "%s", "self") )
-        __debugbreak();
-    if ( !self->ent
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp", 3091, 0, "%s", "self->ent") )
-    {
-        __debugbreak();
-    }
-    if ( self->ent->s.number != self->Physics.iEntNum
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                    3092,
-                    0,
-                    "%s",
-                    "self->ent->s.number == self->Physics.iEntNum") )
-    {
-        __debugbreak();
-    }
-    v2 = self->ent->r.mins[0] == self->Physics.vMins[0]
-        && self->ent->r.mins[1] == self->Physics.vMins[1]
-        && self->ent->r.mins[2] == self->Physics.vMins[2];
-    if ( !v2
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                    3093,
-                    0,
-                    "%s",
-                    "Vec3Compare( self->ent->r.mins, self->Physics.vMins )") )
-    {
-        __debugbreak();
-    }
-    v1 = self->ent->r.maxs[0] == self->Physics.vMaxs[0]
-        && self->ent->r.maxs[1] == self->Physics.vMaxs[1]
-        && self->ent->r.maxs[2] == self->Physics.vMaxs[2];
-    if ( !v1
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                    3094,
-                    0,
-                    "%s",
-                    "Vec3Compare( self->ent->r.maxs, self->Physics.vMaxs )") )
-    {
-        __debugbreak();
-    }
-    if ( self->Physics.ePhysicsType == AIPHYS_BAD
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                    3095,
-                    0,
-                    "%s",
-                    "self->Physics.ePhysicsType != AIPHYS_BAD") )
-    {
-        __debugbreak();
-    }
+    iassert(self);
+    iassert(self->ent);
+    iassert(self->ent->s.number == self->Physics.iEntNum);
+    iassert(Vec3Compare(self->ent->r.mins, self->Physics.vMins));
+    iassert(Vec3Compare(self->ent->r.maxs, self->Physics.vMaxs));
+    iassert(self->Physics.ePhysicsType != AIPHYS_BAD);
+
     oldGroundEntNum = self->Physics.groundEntNum;
     if ( self->Physics.ePhysicsType != AIPHYS_NORMAL_ABSOLUTE )
     {
         YawVectors(self->fDesiredBodyYaw, forward, right);
-        wishdelta_1 = self->Physics.vWishDelta[1];
-        wishdelta_2 = self->Physics.vWishDelta[2];
-        v9 = self->Physics.vWishDelta[0];
-        self->Physics.vWishDelta[0] = v9 * forward[0];
-        self->Physics.vWishDelta[1] = v9 * forward[1];
-        self->Physics.vWishDelta[2] = v9 * forward[2];
+        
+        float wishdelta[3];
+        Vec3Copy(self->Physics.vWishDelta, wishdelta);
 
-        self->Physics.vWishDelta[0] = (float)((-(wishdelta_1)) * right[0]) + self->Physics.vWishDelta[0];
-        self->Physics.vWishDelta[1] = (float)((-(wishdelta_1)) * right[1]) + self->Physics.vWishDelta[1];
-        self->Physics.vWishDelta[2] = (float)((-(wishdelta_1)) * right[2]) + self->Physics.vWishDelta[2];
-        self->Physics.vWishDelta[2] = self->Physics.vWishDelta[2] + wishdelta_2;
+        Vec3Scale(forward, wishdelta[0], self->Physics.vWishDelta);
+
+        self->Physics.vWishDelta[0] += ((-(wishdelta[1])) * right[0]);
+        self->Physics.vWishDelta[1] += ((-(wishdelta[1])) * right[1]);
+        self->Physics.vWishDelta[2] += ((-(wishdelta[1])) * right[2]);
+
+        self->Physics.vWishDelta[2] += wishdelta[2];
     }
+
     self->Physics.fGravity = bg_gravity->current.value;
+
     if ( self->eAnimMode != AI_ANIM_MOVE_CODE
         || !self->moveMode
         || !Actor_HasPath(self)
@@ -2953,10 +2805,9 @@ void __fastcall Actor_DoMove(actor_s *self)
 LABEL_41:
             if ( !bSuccess )
             {
-                v7 = self->ent->r.currentOrigin;
-                vOrigin[0] = *v7;
-                vOrigin[1] = v7[1];
-                vOrigin[2] = v7[2];
+                float vOrigin[3]; // [esp+3C4h] [ebp-14h] BYREF
+                Vec3Copy(self->ent->r.currentOrigin, vOrigin);
+
                 iNodeCount = Path_NodesInCylinder(self->ent->r.currentOrigin, 384.0, 128.0, nodes, 64, -1);
                 node = 0;
                 bestDist = FLT_MAX;
@@ -2987,11 +2838,8 @@ LABEL_41:
                     {
                         deltaHeight = 8.0f;
                     }
-                    v6 = self->ent->r.currentOrigin;
-                    self->Physics.vOrigin[0] = *v6;
-                    self->Physics.vOrigin[1] = v6[1];
-                    self->Physics.vOrigin[2] = v6[2];
-                    self->Physics.vOrigin[2] = self->Physics.vOrigin[2] + deltaHeight;
+                    Vec3Copy(self->ent->r.currentOrigin, self->Physics.vOrigin);
+                    self->Physics.vOrigin[2] += deltaHeight;
                     self->Physics.vVelocity[2] = 0.0f;
                 }
             }
@@ -3023,20 +2871,16 @@ LABEL_41:
     }
     if ( !bSuccess )
     {
-        v5 = self->ent->r.currentOrigin;
-        self->Physics.vOrigin[0] = *v5 + self->Physics.vWishDelta[0];
-        self->Physics.vOrigin[1] = v5[1] + self->Physics.vWishDelta[1];
-        self->Physics.vOrigin[2] = v5[2] + self->Physics.vWishDelta[2];
+        Vec3Add(self->ent->r.currentOrigin, self->Physics.vWishDelta, self->Physics.vOrigin);
         self->Physics.vVelocity[2] = 0.0f;
-        self->Path.wDodgeEntity = 1023;
+        self->Path.wDodgeEntity = ENTITYNUM_NONE;
+
         if ( self->Path.fLookaheadAmount < 64.0 )
             self->Path.fLookaheadAmount = 64.0f;
     }
+
 LABEL_67:
-    v4 = self->ent->r.currentOrigin;
-    *v4 = self->Physics.vOrigin[0];
-    v4[1] = self->Physics.vOrigin[1];
-    v4[2] = self->Physics.vOrigin[2];
+    Vec3Copy(self->Physics.vOrigin, self->ent->r.currentOrigin);
     self->Physics.ePhysicsType = AIPHYS_BAD;
     self->ent->s.groundEntityNum = self->Physics.groundEntNum;
     if ( oldGroundEntNum != self->Physics.groundEntNum )
@@ -4260,11 +4104,10 @@ void __fastcall Actor_UpdateAnglesAndDelta(actor_s *self)
     float rotation[2]; // [esp+44h] [ebp-Ch] BYREF
     gentity_s *ent; // [esp+4Ch] [ebp-4h]
 
-    if ( !self && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp", 4926, 0, "%s", "self") )
-        __debugbreak();
+    iassert(self);
     ent = self->ent;
-    if ( !ent && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp", 4928, 0, "%s", "ent") )
-        __debugbreak();
+    iassert(ent);
+
     if ( self->eAnimMode != AI_ANIM_MOVE_CODE && self->Path.iPathEndTime && self->Path.iPathEndTime - level.time <= 0 )
     {
         Actor_ClearPath(self);
@@ -4276,16 +4119,7 @@ void __fastcall Actor_UpdateAnglesAndDelta(actor_s *self)
             if ( self->moveMode && Actor_HasPath(self) && !self->pCloseEnt.isDefined() )
             {
                 Actor_GetAnimDeltas(self, rotation, translation);
-                if ( !Actor_HasPath(self)
-                    && !Assert_MyHandler(
-                                "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\actor_mp.cpp",
-                                4947,
-                                0,
-                                "%s",
-                                "Actor_HasPath( self )") )
-                {
-                    __debugbreak();
-                }
+                iassert(Actor_HasPath(self));
                 self->Physics.ePhysicsType = AIPHYS_NORMAL_ABSOLUTE;
                 dist = Vec2Length(translation);
                 Path_UpdateMovementDelta(self, dist);

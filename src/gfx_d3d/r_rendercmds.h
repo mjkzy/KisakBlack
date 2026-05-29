@@ -7,6 +7,8 @@
 
 #include "r_shader_constant_set.h"
 
+#define MAX_VISIBLE_DLIGHTS 4
+
 struct GfxImage; 
 
 enum GfxProjectionTypes : __int32

@@ -10372,7 +10372,6 @@ bool __cdecl CG_EntityContact(const float *mins, const float *maxs, const centit
     trace_t trace; // [esp+1Ch] [ebp-44h] BYREF
     float center[2]; // [esp+58h] [ebp-8h]
 
-    memset(&trace, 0, 16);
     if ( ((*((unsigned int *)cent + 201) >> 15) & 1) == 0 )
         return 0;
     if ( (*((unsigned int *)cent + 201) & 0x10000) != 0 )

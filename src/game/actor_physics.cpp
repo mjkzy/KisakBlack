@@ -116,7 +116,6 @@ void __cdecl AIPhys_FoliageSounds(actor_physics_t *pPhys)
     float vMins[3]; // [esp+FCh] [ebp-18h] BYREF
     float vMaxs[3]; // [esp+108h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     vVel[0] = pPhys->vVelocity[0];
     vVel[1] = pPhys->vVelocity[1];
     vVel[2] = 0.0f;
@@ -300,9 +299,7 @@ bool __cdecl AIPhys_StepSlideMove(actor_physics_t *pPhys, int gravity, int zonly
     float up[3]; // [esp+954h] [ebp-18h] BYREF
     float down[3]; // [esp+960h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     //colgeom_visitor_inlined_t<200>::colgeom_visitor_inlined_t<200>(&phys.proximity_data);
-    memset(&localPhys.groundTrace, 0, 16);
     start_o[0] = pPhys->vOrigin[0];
     start_o[1] = pPhys->vOrigin[1];
     start_o[2] = pPhys->vOrigin[2];
@@ -657,7 +654,6 @@ void __thiscall ai_gjk_slide_move_input_t::custom_process(gjk_trace_output_t *gt
     trace_t trace; // [esp+10h] [ebp-3Ch] BYREF
 
     this->m_pPhys->bDeflected = 1;
-    memset(&trace, 0, 16);
     fill_results_type_and_id(gto, &trace);
     EntID = Trace_GetEntityHitId(&trace);
     EntityHitId = Trace_GetEntityHitId(&trace);
@@ -826,7 +822,6 @@ void __cdecl AIPhys_GroundTrace(actor_physics_t *pPhys)
     bool last_ground_entity_was_a_mover; // [esp+8Fh] [ebp-5h]
     const gjkcc_input_t *gjkcc_in; // [esp+90h] [ebp-4h]
 
-    memset(&trace, 0, 16);
     last_ground_entity_was_a_mover = entity_is_a_mover(pPhys->groundEntNum);
     start[0] = pPhys->vOrigin[0];
     start[1] = pPhys->vOrigin[1];

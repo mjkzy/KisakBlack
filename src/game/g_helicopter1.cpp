@@ -329,7 +329,6 @@ void __cdecl VEH_CheckForPredictedCrash(gentity_s *ent)
     trace_t trace; // [esp+38h] [ebp-48h] BYREF
     float targetPos[3]; // [esp+74h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     if ( !ent && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\g_helicopter.cpp", 570, 0, "%s", "ent") )
         __debugbreak();
     if ( !ent->scr_vehicle
@@ -364,7 +363,6 @@ void __cdecl VEH_CheckForCrash(gentity_s *ent, float *newPosition)
     scr_vehicle_s *veh; // [esp+2Ch] [ebp-40h]
     trace_t trace; // [esp+30h] [ebp-3Ch] BYREF
 
-    memset(&trace, 0, 16);
     if ( !ent && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\g_helicopter.cpp", 601, 0, "%s", "ent") )
         __debugbreak();
     if ( !ent->scr_vehicle
@@ -1559,7 +1557,6 @@ void __cdecl VEH_UpdateClientPlane(gentity_s *ent)
     move[1] = 0;
     move[2] = 0;
     move[3] = 0;
-    memset(&trace, 0, 16);
     if ( !ent && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\g_helicopter.cpp", 1081, 0, "%s", "ent") )
         __debugbreak();
     if ( !ent->scr_vehicle

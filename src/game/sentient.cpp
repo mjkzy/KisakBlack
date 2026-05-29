@@ -22,96 +22,47 @@ struct SentientGlobals // sizeof=0x28
 
 sentient_s *__cdecl Sentient_Alloc()
 {
-    int i; // [esp+0h] [ebp-8h]
-    sentient_s *pSentient; // [esp+4h] [ebp-4h]
+    iassert(level.sentients != NULL);
 
-    if ( !level.sentients
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp",
-                    54,
-                    0,
-                    "%s",
-                    "level.sentients != NULL") )
+    for ( int i = 0; i < MAX_SENTIENTS; ++i )
     {
-        __debugbreak();
-    }
-    for ( i = 0; i < 48; ++i )
-    {
-        pSentient = &level.sentients[i];
+        sentient_s *pSentient = &level.sentients[i];
         if ( !pSentient->inuse )
         {
-            memset((unsigned __int8 *)pSentient, 0, sizeof(sentient_s));
+            memset(pSentient, 0, sizeof(sentient_s));
             pSentient->inuse = 1;
             return pSentient;
         }
     }
+
     Com_DPrintf(15, "Sentient allocation failed\n");
     return 0;
 }
 
 void __cdecl Sentient_Free(sentient_s *sentient)
 {
-    actor_s *pActor; // [esp+0h] [ebp-Ch]
-    gentity_s *ent; // [esp+4h] [ebp-8h]
-    int i; // [esp+8h] [ebp-4h]
-
-    if ( !sentient && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 86, 0, "%s", "sentient") )
-        __debugbreak();
-    if ( !level.sentients
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 87, 0, "%s", "level.sentients") )
+    iassert(sentient);
+    iassert(level.sentients);
+    iassert(sentient >= level.sentients && sentient < level.sentients + MAX_SENTIENTS);
+    iassert(&level.sentients[sentient - level.sentients] == sentient);
+    iassert(sentient->ent);
+    iassert(sentient->ent->actor == NULL);
+    
+    for ( int i = 0; i < MAX_ACTORS; ++i )
     {
-        __debugbreak();
-    }
-    if ( (sentient < level.sentients || sentient >= &level.sentients[48])
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp",
-                    88,
-                    0,
-                    "%s",
-                    "sentient >= level.sentients && sentient < level.sentients + MAX_SENTIENTS") )
-    {
-        __debugbreak();
-    }
-    if ( &level.sentients[sentient - level.sentients] != sentient
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp",
-                    89,
-                    0,
-                    "%s",
-                    "&level.sentients[sentient - level.sentients] == sentient") )
-    {
-        __debugbreak();
-    }
-    if ( !sentient->ent
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 90, 0, "%s", "sentient->ent") )
-    {
-        __debugbreak();
-    }
-    if ( sentient->ent->actor
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp",
-                    91,
-                    0,
-                    "%s",
-                    "sentient->ent->actor == NULL") )
-    {
-        __debugbreak();
-    }
-    ent = sentient->ent;
-    for ( i = 0; i < 16; ++i )
-    {
-        pActor = &level.actors[i];
+        actor_s *pActor = &level.actors[i];
         if ( pActor->inuse )
         {
-            if ( pActor->pPileUpEnt == ent )
+            if ( pActor->pPileUpEnt == sentient->ent)
                 Actor_ClearPileUp(pActor);
         }
     }
+
     G_FreeEntityRefs(sentient->ent);
     Sentient_Dissociate(sentient);
     sentient->ent->sentient = 0;
     SentientHandleDissociate(sentient);
-    memset((unsigned __int8 *)sentient, 0xF0u, sizeof(sentient_s));
+    memset(sentient, 0xF0, sizeof(sentient_s));
     sentient->inuse = 0;
 }
 
@@ -132,39 +83,23 @@ void __cdecl Sentient_Dissociate(sentient_s *pSentient)
 
 void __cdecl Sentient_DissociateSentient(sentient_s *self, sentient_s *other)
 {
-    int i; // [esp+0h] [ebp-Ch]
-    gclient_s *client; // [esp+4h] [ebp-8h]
-    actor_s *actor; // [esp+8h] [ebp-4h]
+    iassert(self);
+    iassert(self != other);
+    iassert(other);
+    iassert(other->eTeam == SENTIENT_TEAM_DEAD);
 
-    if ( !self && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 172, 0, "%s", "self") )
-        __debugbreak();
-    if ( self == other
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 173, 0, "%s", "self != other") )
-    {
-        __debugbreak();
-    }
-    if ( !other && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 174, 0, "%s", "other") )
-        __debugbreak();
-    if ( other->eTeam != TEAM_SPECTATOR
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp",
-                    175,
-                    0,
-                    "%s",
-                    "other->eTeam == SENTIENT_TEAM_DEAD") )
-    {
-        __debugbreak();
-    }
-    actor = self->ent->actor;
+    actor_s *actor = self->ent->actor;
     if ( actor )
         Actor_DissociateSentient(actor, other);
-    client = self->ent->client;
+
+    gclient_s *client = self->ent->client;
     if ( client && client->ps.throwBackGrenadeOwner == other->ent->s.number )
-        client->ps.throwBackGrenadeOwner = 1022;
-    //if ( EntHandle::isDefined(&self->targetEnt) && EntHandle::ent(&self->targetEnt)->sentient == other && actor )
+        client->ps.throwBackGrenadeOwner = ENTITYNUM_WORLD;
+
     if ( self->targetEnt.isDefined() && self->targetEnt.ent()->sentient == other && actor)
         actor->lastEnemySightPosValid = 0;
-    for ( i = 0; i < 4; ++i )
+
+    for ( int i = 0; i < 4; ++i )
     {
         if ( self->meleeAttackerSpot[i] )
         {
@@ -176,108 +111,41 @@ void __cdecl Sentient_DissociateSentient(sentient_s *self, sentient_s *other)
 
 void __fastcall Sentient_GetOrigin(const sentient_s *self, float *vOriginOut)
 {
-    float *currentOrigin; // [esp+8h] [ebp-4h]
+    iassert(self);
+    iassert(self->ent);
+    iassert(self->ent->actor || self->ent->client);
+    iassert(vOriginOut);
 
-    if ( !self && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 213, 0, "%s", "self") )
-        __debugbreak();
-    if ( !self->ent
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 214, 0, "%s", "self->ent") )
-    {
-        __debugbreak();
-    }
-    if ( !self->ent->actor
-        && !self->ent->client
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp",
-                    215,
-                    0,
-                    "%s",
-                    "self->ent->actor || self->ent->client") )
-    {
-        __debugbreak();
-    }
-    if ( !vOriginOut
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 216, 0, "%s", "vOriginOut") )
-    {
-        __debugbreak();
-    }
-    currentOrigin = self->ent->r.currentOrigin;
-    *vOriginOut = *currentOrigin;
-    vOriginOut[1] = currentOrigin[1];
-    vOriginOut[2] = currentOrigin[2];
+    Vec3Copy(self->ent->r.currentOrigin, vOriginOut);
 }
 
 void __fastcall Sentient_GetVelocity(const sentient_s *self, float *vVelOut)
 {
-    actor_s *actor; // edx
-    float *vVelocity; // edx
-    gclient_s *client; // edx
+    iassert(self);
+    iassert(self->ent);
+    iassert(self->ent->actor || self->ent->client);
+    iassert(vVelOut);
 
-    if ( !self && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 249, 0, "%s", "self") )
-        __debugbreak();
-    if ( !self->ent
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 250, 0, "%s", "self->ent") )
+    if (self->ent->actor)
     {
-        __debugbreak();
-    }
-    if ( !self->ent->actor
-        && !self->ent->client
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp",
-                    251,
-                    0,
-                    "%s",
-                    "self->ent->actor || self->ent->client") )
-    {
-        __debugbreak();
-    }
-    if ( !vVelOut && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 252, 0, "%s", "vVelOut") )
-        __debugbreak();
-    if ( self->ent->actor )
-    {
-        actor = self->ent->actor;
-        *vVelOut = actor->Physics.vVelocity[0];
-        vVelOut[1] = actor->Physics.vVelocity[1];
-        vVelocity = actor->Physics.vVelocity;
+        Vec3Copy(self->ent->actor->Physics.vVelocity, vVelOut);
     }
     else
     {
-        client = self->ent->client;
-        *vVelOut = client->ps.velocity[0];
-        vVelOut[1] = client->ps.velocity[1];
-        vVelocity = client->ps.velocity;
+        Vec3Copy(self->ent->client->ps.velocity, vVelOut);
     }
-    vVelOut[2] = vVelocity[2];
 }
 
 void __fastcall Sentient_GetEyePosition(const sentient_s *self, float *vEyePosOut)
 {
     PROF_SCOPED("Sentient_GetEyePosition");
 
-    if ( !self && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 299, 0, "%s", "self") )
-        __debugbreak();
-    if ( !self->ent
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 300, 0, "%s", "self->ent") )
-    {
-        __debugbreak();
-    }
-    if ( !self->ent->actor
-        && !self->ent->client
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp",
-                    301,
-                    0,
-                    "%s",
-                    "self->ent->actor || self->ent->client") )
-    {
-        __debugbreak();
-    }
-    if ( !vEyePosOut
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\sentient.cpp", 302, 0, "%s", "vEyePosOut") )
-    {
-        __debugbreak();
-    }
-    if ( self->ent->actor )
+    iassert(self);
+    iassert(self->ent);
+    iassert(self->ent->actor || self->ent->client);
+    iassert(vEyePosOut);
+
+    if (self->ent->actor)
         Actor_GetEyePosition(self->ent->actor, vEyePosOut);
     else
         G_GetPlayerViewOrigin(&self->ent->client->ps, vEyePosOut);

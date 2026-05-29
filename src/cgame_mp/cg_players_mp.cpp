@@ -962,7 +962,6 @@ void __cdecl CG_PlayerTurretPositionAndBlend(int localClientNum, centity_s *cent
     float turretAxis[4][3]; // [esp+268h] [ebp-3Ch] BYREF
     float vDelta[3]; // [esp+298h] [ebp-Ch]
 
-    memset(&trace, 0, 16);
     if ( cent->nextState.otherEntityNum >= 32 && cent->nextState.otherEntityNum != 1023 )
     {
         cgameGlob = CG_GetLocalClientGlobals(localClientNum);
@@ -1928,7 +1927,6 @@ bool __cdecl CG_IsWeaponVisible(int localClientNum, centity_s *cent, XModel *wea
     float weapLen; // [esp+B4h] [ebp-10h] BYREF
     float eye[3]; // [esp+B8h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     if ( !weapModel
         && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\cgame_mp\\cg_players_mp.cpp", 1996, 0, "%s", "weapModel") )
     {

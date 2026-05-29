@@ -5532,120 +5532,58 @@ bool __cdecl RB_BackendTimeout(int gpuIndex)
 
 void __cdecl RB_InitBackendGlobalStructs()
 {
-    memset((unsigned __int8 *)&backEnd, 0, sizeof(backEnd));
+    memset(&backEnd, 0, sizeof(backEnd));
     RB_InitSceneViewport();
     RB_InitCodeImages();
 }
 
 void __cdecl RB_SetBspImages()
 {
-    if ( rgp.world->skyImage
-        && (rgp.world->skySamplerState & 7) == 0
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\rb_backend.cpp",
-                    7098,
-                    0,
-                    "%s",
-                    "!rgp.world->skyImage || (rgp.world->skySamplerState & SAMPLER_FILTER_MASK)") )
-    {
-        __debugbreak();
-    }
-    gfxCmdBufInput.codeImages[18] = rgp.world->outdoorImage;
-    gfxCmdBufInput.codeImages[15] = rgp.world->skyImage;
-    gfxCmdBufInput.codeImageSamplerStates[15] = rgp.world->skySamplerState;
+    iassert(!rgp.world->skyImage || (rgp.world->skySamplerState & SAMPLER_FILTER_MASK));
+
+    gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_OUTDOOR] = rgp.world->outdoorImage;
+    gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_SKY] = rgp.world->skyImage;
+    gfxCmdBufInput.codeImageSamplerStates[TEXTURE_SRC_CODE_SKY] = rgp.world->skySamplerState;
 }
 
 void __cdecl RB_InitCodeImages()
 {
-    unsigned __int8 v0; // [esp+1Ah] [ebp-1Ah]
-    unsigned __int8 shadowmapSamplerState; // [esp+1Bh] [ebp-19h]
-    int i; // [esp+2Ch] [ebp-8h]
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_BLACK,                    rgp.blackImage,                                           1,                                   "TEXTURE_SRC_CODE_BLACK");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_WHITE,                    rgp.whiteImage,                                           1,                                   "TEXTURE_SRC_CODE_WHITE");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_IDENTITY_NORMAL_MAP,      rgp.identityNormalMapImage,                               1,                                   "TEXTURE_SRC_CODE_IDENTITY_NORMAL_MAP");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_MODEL_LIGHTING,           0,                                                        0xE2,                                "TEXTURE_SRC_CODE_MODEL_LIGHTING");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_SHADOWMAP_SUN,            gfxRenderTargets[R_RENDERTARGET_SHADOWMAP_SUN].image,     gfxMetrics.shadowmapSamplerState,    "shadowmapSamplerSun");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_SHADOWMAP_SPOT,           0,                                                        gfxMetrics.shadowmapSamplerState,    "shadowmapSamplerSpot");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_FEEDBACK,                 0,                                                        0xE2,                                "feedbackSampler");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_RESOLVED_POST_SUN,        0,                                                        98,                                  "TEXTURE_SRC_CODE_RESOLVED_POST_SUN");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_RESOLVED_SCENE,           gfxRenderTargets[R_RENDERTARGET_RESOLVED_SCENE].image,    98,                                  "resolvedScene");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_POST_EFFECT_SRC,          gfxRenderTargets[R_RENDERTARGET_POST_EFFECT_SRC].image,   98,                                  "postEffectSrc");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_POST_EFFECT_GODRAYS,      gfxRenderTargets[R_RENDERTARGET_POST_EFFECT_GODRAYS].image, 98,                                "postEffectGodRays");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_POST_EFFECT_0,            gfxRenderTargets[R_RENDERTARGET_POST_EFFECT_0].image,     98,                                  "postEffect0");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_POST_EFFECT_1,            gfxRenderTargets[R_RENDERTARGET_POST_EFFECT_1].image,     98,                                  "postEffect1");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_SKY,                      0,                                                        0,                                   "sampler.sky");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_LIGHT_ATTENUATION,        0,                                                        0,                                   "attenuationSampler");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_DLIGHT_ATTENUATION,       0,                                                        0,                                   "dlightAttenuationSampler");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_OUTDOOR,                  0,                                                        98,                                  "TEXTURE_SRC_CODE_OUTDOOR");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_FLOATZ,                   gfxRenderTargets[R_RENDERTARGET_FLOAT_Z].image,           97,                                  "floatz");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_CINEMATIC_Y,              0,                                                        98,                                  "cinematicY");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_CINEMATIC_CR,             0,                                                        98,                                  "cinematicCr");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_CINEMATIC_CB,             0,                                                        98,                                  "cinematicCb");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_CINEMATIC_A,              0,                                                        98,                                  "cinematicA");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_TERRAIN_SCORCH_TEXTURE_0, 0,                                                        10,                                  "terrainScorchTexture0");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_TERRAIN_SCORCH_TEXTURE_1, 0,                                                        10,                                  "terrainScorchTexture1");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_TERRAIN_SCORCH_TEXTURE_2, 0,                                                        10,                                  "terrainScorchTexture2");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_TERRAIN_SCORCH_TEXTURE_3, 0,                                                        10,                                  "terrainScorchTexture3");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_TEXTURE_0,                0,                                                        0x62u,                               "TEXTURE_SRC_CODE_TEXTURE_0");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_TEXTURE_1,                0,                                                        0x62u,                               "TEXTURE_SRC_CODE_TEXTURE_1");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_TEXTURE_2,                0,                                                        0x62u,                               "TEXTURE_SRC_CODE_TEXTURE_2");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_TEXTURE_3,                0,                                                        0x62u,                               "TEXTURE_SRC_CODE_TEXTURE_3");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_IMPACT_MASK,              rgp.whiteImage,                                           0x61u,                               "impactMaskSampler");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_UI3D,                     rgp.whiteImage,                                           0x72u,                               "ui3dSampler");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_MISSILE_CAM,              rgp.whiteImage,                                           0x72u,                               "missileCamSampler");
+    RB_InitSingleCodeImage(TEXTURE_SRC_CODE_HEATMAP,                  rgp.whiteImage,                                           0x72u,                               "heatMapSampler");
 
-    gfxCmdBufInput.codeImages[0] = rgp.blackImage;
-    gfxCmdBufInput.codeImageSamplerStates[0] = 1;
-    rg.codeImageNames[0] = "TEXTURE_SRC_CODE_BLACK";
-    gfxCmdBufInput.codeImages[1] = rgp.whiteImage;
-    gfxCmdBufInput.codeImageSamplerStates[1] = 1;
-    rg.codeImageNames[1] = "TEXTURE_SRC_CODE_WHITE";
-    gfxCmdBufInput.codeImages[2] = rgp.identityNormalMapImage;
-    gfxCmdBufInput.codeImageSamplerStates[2] = 1;
-    rg.codeImageNames[2] = "TEXTURE_SRC_CODE_IDENTITY_NORMAL_MAP";
-    gfxCmdBufInput.codeImages[3] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[3] = -30;
-    rg.codeImageNames[3] = "TEXTURE_SRC_CODE_MODEL_LIGHTING";
-    shadowmapSamplerState = gfxMetrics.shadowmapSamplerState;
-    gfxCmdBufInput.codeImages[6] = gfxRenderTargets[R_RENDERTARGET_SHADOWMAP_SUN].image;
-    gfxCmdBufInput.codeImageSamplerStates[6] = shadowmapSamplerState;
-    rg.codeImageNames[6] = "shadowmapSamplerSun";
-    v0 = gfxMetrics.shadowmapSamplerState;
-    gfxCmdBufInput.codeImages[7] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[7] = v0;
-    rg.codeImageNames[7] = "shadowmapSamplerSpot";
-    gfxCmdBufInput.codeImages[8] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[8] = -30;
-    rg.codeImageNames[8] = "feedbackSampler";
-    gfxCmdBufInput.codeImages[9] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[9] = 98;
-    rg.codeImageNames[9] = "TEXTURE_SRC_CODE_RESOLVED_POST_SUN";
-    gfxCmdBufInput.codeImages[10] = gfxRenderTargets[R_RENDERTARGET_RESOLVED_SCENE].image;
-    gfxCmdBufInput.codeImageSamplerStates[10] = 98;
-    rg.codeImageNames[10] = "resolvedScene";
-    gfxCmdBufInput.codeImages[11] = gfxRenderTargets[R_RENDERTARGET_POST_EFFECT_SRC].image;
-    gfxCmdBufInput.codeImageSamplerStates[11] = 98;
-    rg.codeImageNames[11] = "postEffectSrc";
-    gfxCmdBufInput.codeImages[12] = gfxRenderTargets[R_RENDERTARGET_POST_EFFECT_GODRAYS].image;
-    gfxCmdBufInput.codeImageSamplerStates[12] = 98;
-    rg.codeImageNames[12] = "postEffectGodRays";
-    gfxCmdBufInput.codeImages[13] = gfxRenderTargets[R_RENDERTARGET_POST_EFFECT_0].image;
-    gfxCmdBufInput.codeImageSamplerStates[13] = 98;
-    rg.codeImageNames[13] = "postEffect0";
-    gfxCmdBufInput.codeImages[14] = gfxRenderTargets[R_RENDERTARGET_POST_EFFECT_1].image;
-    gfxCmdBufInput.codeImageSamplerStates[14] = 98;
-    rg.codeImageNames[14] = "postEffect1";
-    gfxCmdBufInput.codeImages[15] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[15] = 0;
-    rg.codeImageNames[15] = "sampler.sky";
-    gfxCmdBufInput.codeImages[16] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[16] = 0;
-    rg.codeImageNames[16] = "attenuationSampler";
-    gfxCmdBufInput.codeImages[17] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[17] = 0;
-    rg.codeImageNames[17] = "dlightAttenuationSampler";
-    gfxCmdBufInput.codeImages[18] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[18] = 98;
-    rg.codeImageNames[18] = "TEXTURE_SRC_CODE_OUTDOOR";
-    gfxCmdBufInput.codeImages[19] = gfxRenderTargets[R_RENDERTARGET_FLOAT_Z].image;
-    gfxCmdBufInput.codeImageSamplerStates[19] = 97;
-    rg.codeImageNames[19] = "floatz";
-    gfxCmdBufInput.codeImages[23] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[23] = 98;
-    rg.codeImageNames[23] = "cinematicY";
-    gfxCmdBufInput.codeImages[24] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[24] = 98;
-    rg.codeImageNames[24] = "cinematicCr";
-    gfxCmdBufInput.codeImages[25] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[25] = 98;
-    rg.codeImageNames[25] = "cinematicCb";
-    gfxCmdBufInput.codeImages[26] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[26] = 98;
-    rg.codeImageNames[26] = "cinematicA";
-    gfxCmdBufInput.codeImages[29] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[29] = 10;
-    rg.codeImageNames[29] = "terrainScorchTexture0";
-    gfxCmdBufInput.codeImages[30] = 0;
-    gfxCmdBufInput.codeImageSamplerStates[30] = 10;
-    rg.codeImageNames[30] = "terrainScorchTexture1";
-    RB_InitSingleCodeImage(0x1Fu, 0, 0xAu, "terrainScorchTexture2");
-    RB_InitSingleCodeImage(0x20u, 0, 0xAu, "terrainScorchTexture3");
-    RB_InitSingleCodeImage(0x22u, 0, 0x62u, "TEXTURE_SRC_CODE_TEXTURE_0");
-    RB_InitSingleCodeImage(0x23u, 0, 0x62u, "TEXTURE_SRC_CODE_TEXTURE_1");
-    RB_InitSingleCodeImage(0x24u, 0, 0x62u, "TEXTURE_SRC_CODE_TEXTURE_2");
-    RB_InitSingleCodeImage(0x25u, 0, 0x62u, "TEXTURE_SRC_CODE_TEXTURE_3");
-    RB_InitSingleCodeImage(0x26u, rgp.whiteImage, 0x61u, "impactMaskSampler");
-    RB_InitSingleCodeImage(0x27u, rgp.whiteImage, 0x72u, "ui3dSampler");
-    RB_InitSingleCodeImage(0x28u, rgp.whiteImage, 0x72u, "missileCamSampler");
-    RB_InitSingleCodeImage(0x2Au, rgp.whiteImage, 0x72u, "heatMapSampler");
-    for (i = 0; i < 43; ++i)
+    for (int i = 0; i < TEXTURE_SRC_CODE_COUNT; ++i)
         gfxCmdBufInput.codeImageRenderTargetControl[i].packed = 0;
 }
 

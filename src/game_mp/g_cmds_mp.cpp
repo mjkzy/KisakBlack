@@ -515,7 +515,6 @@ void __cdecl StopFollowing(gentity_s *ent)
     float vUp[3]; // [esp+B4h] [ebp-18h] BYREF
     float vMaxs[3]; // [esp+C0h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     //col_context_t::col_context_t(&context);
     client = ent->client;
     if ( !client && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\g_cmds_mp.cpp", 709, 0, "%s", "client") )

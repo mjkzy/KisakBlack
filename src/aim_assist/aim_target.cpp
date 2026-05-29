@@ -544,7 +544,6 @@ bool __cdecl AimTarget_IsTargetVisible(int localClientNum, const centity_s *targ
     float playerEyePos[3]; // [esp+88h] [ebp-18h] BYREF
     float targetEyePos[3]; // [esp+94h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     if ( !targetEnt
         && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\aim_assist\\aim_target.cpp", 736, 0, "%s", "targetEnt") )
     {

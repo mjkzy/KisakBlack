@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <d3d9.h>
 #include "r_bsp.h"
+#include "r_material_load_obj.h"
 
 #define MAX_TOTAL_ENT_COUNT 0x2000
 
@@ -759,7 +760,7 @@ struct __declspec(align(8)) r_globals_t // sizeof=0x10A10
                                         // R_UpdateFrontEndDvarOptions+282/w
     bool drawBModels;                   // XREF: R_DrawAllDynEnt(GfxViewInfo const *):loc_A41634/r
                                         // R_UpdateFrontEndDvarOptions+266/w
-    const char *codeImageNames[43];     // XREF: RB_InitCodeImages(void)+28/w
+    const char *codeImageNames[TEXTURE_SRC_CODE_COUNT]; // index = MaterialTextureSource
                                         // RB_InitCodeImages(void)+5B/w ...
     unsigned int viewInfoCount;         // XREF: R_GenerateSortedDrawSurfs+B/r
                                         // R_GenerateSortedDrawSurfs+4B/r ...

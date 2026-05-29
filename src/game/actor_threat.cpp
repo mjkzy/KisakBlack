@@ -525,35 +525,43 @@ void __cdecl DebugThreatStringAll(const actor_s *self, sentient_s *enemy, int th
     float start[3]; // [esp+28h] [ebp-1Ch] BYREF
     float color[4]; // [esp+34h] [ebp-10h] BYREF
 
-    if ( !self && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\actor_threat.cpp", 383, 0, "%s", "self") )
-        __debugbreak();
+    iassert(self);
+
     if ( ai_debugThreatSelection->current.enabled && ai_debugEntIndex->current.integer == self->ent->s.number )
     {
-        if ( !enemy && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\actor_threat.cpp", 387, 0, "%s", "enemy") )
-            __debugbreak();
+        iassert(enemy);
         fraction = (float)threat / 7000.0;
         if ( (float)(fraction - 1.0) < 0.0 )
             v4 = fraction;
         else
             v4 = 1.0f;
+
         if ( (float)(0.0 - fraction) < 0.0 )
             v3 = v4;
         else
             v3 = 0.0f;
         fraction = v3;
+
         color[0] = (float)(v3 * 0.5) + 0.5;
         color[1] = color[0];
         color[2] = 0.0f;
         color[3] = 1.0f;
+
         Sentient_GetDebugEyePosition(self->ent->sentient, start);
         Sentient_GetDebugEyePosition(enemy, displayPos);
+
         CG_DebugLine(start, displayPos, color, 0, ai_threatUpdateInterval->current.integer / 50);
+
         displayPos[2] = displayPos[2] + 32.0;
-        for ( i = 0; i < 10; ++i )
+
+        for ( i = 0; i < ARRAYSIZE(g_threatDebugStrings); ++i )
         {
-            if ( g_threatDebugStrings[i][0] )
-                G_AddDebugString(displayPos, color, 0.5, g_threatDebugStrings[i], ai_threatUpdateInterval->current.integer / 50);
-            displayPos[2] = displayPos[2] + 8.0;
+            char *str = g_threatDebugStrings[i];
+
+            if ( str[0] )
+                G_AddDebugString(displayPos, color, 0.5, str, ai_threatUpdateInterval->current.integer / 50);
+
+            displayPos[2] += 8.0f;
         }
     }
 }
@@ -577,20 +585,15 @@ int __fastcall Actor_ThreatFromScariness(float fScariness)
 
 int __fastcall Actor_ThreatFromDistance(float fDistance)
 {
-    const char *v4; // eax
     int threat; // [esp+1Ch] [ebp-4h]
 
-    if ( fDistance < 0.0
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\actor_threat.cpp", 518, 0, "%s", "fDistance >= 0") )
-    {
-        __debugbreak();
-    }
+    iassert(fDistance >= 0);
+
     if ( fDistance >= 2500.0 )
         return 0;
-    threat = (int)((float)((float)(AI_THREAT_DISTANCE_RATE * (float)(2500.0 - fDistance)) * (float)(2500.0 - fDistance))
-                             + 9.313225746154785e-10);
-    v4 = va("%d (%0.1f)", threat, fDistance);
-    DebugSetThreatStringFromString(TDS_DIST_THREAT, v4);
+
+    threat = (int)((float)((float)(AI_THREAT_DISTANCE_RATE * (float)(2500.0 - fDistance)) * (float)(2500.0 - fDistance)) + 9.313225746154785e-10);
+    DebugSetThreatStringFromString(TDS_DIST_THREAT, va("%d (%0.1f)", threat, fDistance));
     return threat;
 }
 
@@ -878,31 +881,10 @@ void __fastcall Actor_IncrementThreatTime(actor_s *self)
 
 void __fastcall Actor_SetPotentialThreat(potential_threat_t *self, float yaw)
 {
-#if 0
-    long double selfa; // [esp+0h] [ebp-4h]
-    long double selfb; // [esp+0h] [ebp-4h]
-    potential_threat_t *selfc; // [esp+0h] [ebp-4h]
-
-    LODWORD(selfa) = self;
     self->isEnabled = 1;
-    __libm_sse2_cos(selfa);
-    *(float *)(LODWORD(selfb) + 4) = yaw * 0.017453292;
-    __libm_sse2_sin(selfb);
-    selfc->direction[1] = yaw * 0.017453292;
-#endif
-    double v3; // fp31
-    long double v4; // fp2
-    long double v5; // fp2
-    long double v6; // fp2
 
-    v3 = (float)((float)yaw * (float)0.017453292);
-    self->isEnabled = 1;
-    *(double *)&v4 = v3;
-    v5 = cos(v4);
-    self->direction[0] = *(double *)&v5;
-    *(double *)&v5 = v3;
-    v6 = sin(v5);
-    self->direction[1] = *(double *)&v6;
+    self->direction[0] = cos(DEG2RAD(yaw));
+    self->direction[1] = sin(DEG2RAD(yaw));
 }
 
 void __fastcall Actor_ClearPotentialThreat(potential_threat_t *self)

@@ -259,7 +259,6 @@ bool __cdecl SV_EntityContact(const float *mins, const float *maxs, const gentit
     trace_t trace; // [esp+2Ch] [ebp-44h] BYREF
     float center[2]; // [esp+68h] [ebp-8h]
 
-    memset(&trace, 0, 16);
     if ( (gEnt->r.svFlags & 0x60) != 0 )
     {
         if ( (gEnt->r.svFlags & 0x20) != 0 )

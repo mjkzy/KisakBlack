@@ -1518,7 +1518,6 @@ void __cdecl CG_UpdateArtilleryKillCam(int localClientNum)
     float campos[3]; // [esp+1A0h] [ebp-18h] BYREF
     float originalBombOrigin[3]; // [esp+1ACh] [ebp-Ch]
 
-    memset(&trace, 0, 16);
     cgameGlob = CG_GetLocalClientGlobals(localClientNum);
     if ( !cgameGlob->inKillCam
         && !Assert_MyHandler(
@@ -1796,7 +1795,6 @@ void __cdecl CG_UpdateDogKillCam(int localClientNum)
     trace_t trace; // [esp+E8h] [ebp-48h] BYREF
     float dogOrigin[3]; // [esp+124h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     cgameGlob = CG_GetLocalClientGlobals(localClientNum);
     if ( !cgameGlob->inKillCam
         && !Assert_MyHandler(
@@ -1962,7 +1960,6 @@ void __cdecl LerpKillCamView(int localClientNum)
     {
         if ( cgameGlob->killCamLerpEndTime > cgameGlob->time )
         {
-            memset(&trace, 0, 16);
             if ( cgameGlob->killCamLerpEndTime <= cgameGlob->oldTime
                 && !Assert_MyHandler(
                             "C:\\projects_pc\\cod\\codsrc\\src\\cgame_mp\\cg_view_mp.cpp",
@@ -3271,7 +3268,6 @@ void __cdecl CG_UpdateExplosiveKillCam(int localClientNum, KillCamEntityType kil
     bool shouldStop; // [esp+20Fh] [ebp-Dh]
     float campos[3]; // [esp+210h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     cgameGlob = CG_GetLocalClientGlobals(localClientNum);
     if ( !cgameGlob->inKillCam
         && !Assert_MyHandler(
@@ -3635,7 +3631,6 @@ void __cdecl CG_KillcamCameraTrace(
     float prevBombOrigin[3]; // [esp+B0h] [ebp-10h] BYREF
     const float *thin_mins; // [esp+BCh] [ebp-4h]
 
-    memset(&trace, 0, 16);
     cam_mins = CAM_MINS;
     cam_maxs = CAM_MAXS;
     thin_mins = THIN_MAXS;
@@ -3873,11 +3868,10 @@ const ClientViewParams *__cdecl CG_GetLocalClientViewParams(
 void __cdecl GetCeilingHeight(cg_s *cgameGlob)
 {
     col_context_t context; // [esp+Ch] [ebp-74h] BYREF
-    trace_t result; // [esp+34h] [ebp-4Ch] BYREF
+    trace_t trace; // [esp+34h] [ebp-4Ch] BYREF
     float endPos[3]; // [esp+70h] [ebp-10h] BYREF
     float TEST_HEIGHT; // [esp+7Ch] [ebp-4h]
 
-    memset(&result, 0, 16);
     if ( ++cgameGlob->heightToCeilingTS >= 50 )
     {
         TEST_HEIGHT = 1024.0f;
@@ -3886,10 +3880,10 @@ void __cdecl GetCeilingHeight(cg_s *cgameGlob)
         endPos[2] = cgameGlob->predictedPlayerState.origin[2];
         endPos[2] = endPos[2] + 1024.0;
         //col_context_t::col_context_t(&context);
-        CG_TraceCapsule(&result, cgameGlob->predictedPlayerState.origin, playerMins, playerMaxs, endPos, 1023, 1, &context);
-        if ( result.fraction < 1.0 )
+        CG_TraceCapsule(&trace, cgameGlob->predictedPlayerState.origin, playerMins, playerMaxs, endPos, 1023, 1, &context);
+        if ( trace.fraction < 1.0 )
         {
-            Vec3Lerp(cgameGlob->predictedPlayerState.origin, endPos, result.fraction, endPos);
+            Vec3Lerp(cgameGlob->predictedPlayerState.origin, endPos, trace.fraction, endPos);
             cgameGlob->heightToCeiling = endPos[2] - cgameGlob->predictedPlayerState.origin[2];
         }
         else
@@ -5022,7 +5016,6 @@ void __cdecl CG_UpdateAdsDof(int localClientNum, GfxDepthOfField *dof)
     float traceEnd[3]; // [esp+F0h] [ebp-10h] BYREF
     float farEnd; // [esp+FCh] [ebp-4h]
 
-    memset(&trace, 0, 16);
     if ( !dof && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\cgame_mp\\cg_view_mp.cpp", 3702, 0, "%s", "dof") )
         __debugbreak();
     cgameGlob = CG_GetLocalClientGlobals(localClientNum);

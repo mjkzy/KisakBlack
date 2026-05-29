@@ -936,7 +936,6 @@ void __cdecl Flame_Phys_Update_Items_PerStream(bool is_server, int nitems, flame
     float nearestClientDist; // [esp+D8h] [ebp-8F0h]
     int numLocalClients; // [esp+DCh] [ebp-8ECh]
     int ents[128]; // [esp+E0h] [ebp-8E8h] BYREF
-    trace_t trace2; // [esp+2E0h] [ebp-6E8h] BYREF
     int dynEntsCount[2]; // [esp+318h] [ebp-6B0h] BYREF
     float mx[3]; // [esp+320h] [ebp-6A8h] BYREF
     int close_triggers_count; // [esp+32Ch] [ebp-69Ch] BYREF
@@ -945,7 +944,6 @@ void __cdecl Flame_Phys_Update_Items_PerStream(bool is_server, int nitems, flame
     float expand_vec[3]; // [esp+378h] [ebp-650h] BYREF
     int max_models; // [esp+384h] [ebp-644h]
     int skip; // [esp+388h] [ebp-640h]
-    trace_t trace; // [esp+38Ch] [ebp-63Ch] BYREF
     colgeom_visitor_inlined_t<500> *proximity_cache; // [esp+3C4h] [ebp-604h]
     float mn[3]; // [esp+3C8h] [ebp-600h] BYREF
     int entsCount; // [esp+3D4h] [ebp-5F4h]
@@ -1049,8 +1047,9 @@ void __cdecl Flame_Phys_Update_Items_PerStream(bool is_server, int nitems, flame
         R_GetStaticModels(mn, mx, models, &models_count, 256);
         skip = 1;
         skipcounter = 1;
-        memset(&trace, 0, 16);
-        memset(&trace2, 0, 16);
+
+        trace_t trace; // [esp+38Ch] [ebp-63Ch] BYREF
+        trace_t trace2; // [esp+2E0h] [ebp-6E8h] BYREF
         for ( k = 0; k < nitems; ++k )
         {
             point = items[k]->phys.origin;

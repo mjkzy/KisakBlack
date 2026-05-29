@@ -487,7 +487,6 @@ void    G_ExplodeMissile(gentity_s *ent)
     int *v21; // [esp+64h] [ebp-168h]
     float endpos[4]; // [esp+68h] [ebp-164h] BYREF
     float impact_normal[4]; // [esp+78h] [ebp-154h] BYREF
-    trace_t tr; // [esp+88h] [ebp-144h] BYREF
     gentity_s *groundEnt; // [esp+C0h] [ebp-10Ch]
     col_context_t explosionPos; // [esp+C4h] [ebp-108h] BYREF
     const float *normal; // [esp+104h] [ebp-C8h]
@@ -694,7 +693,7 @@ void    G_ExplodeMissile(gentity_s *ent)
                 groundEnt = &g_entities[ent->s.groundEntityNum];
                 if (groundEnt->scr_vehicle)
                 {
-                    memset(&tr, 0, 16);
+                    trace_t tr; // [esp+88h] [ebp-144h] BYREF
                     //LODWORD(impact_normal[3]) = &ent->mover.midTime;
                     //LODWORD(impact_normal[0]) = ent->item[1].clipAmmoCount ^ _mask__NegFloat_;
                     (impact_normal[0]) = -ent->item[1].clipAmmoCount;
@@ -1126,8 +1125,6 @@ void __cdecl G_RunMissileInternal(gentity_s *ent)
     const WeaponDef *weapDef; // [esp+1DCh] [ebp-4h]
     int savedregs; // [esp+1E0h] [ebp+0h] BYREF
 
-    memset(&tr, 0, 16);
-    memset(&trDown, 0, 16);
     if ( !ent && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\g_missile.cpp", 3531, 0, "%s", "ent") )
         __debugbreak();
     if ( ent->s.eType != 4
@@ -1547,7 +1544,6 @@ void    MissileImpact(gentity_s *ent, trace_t *trace, float *dir, float *endpos)
     //v88[0] = a1;
     //v88[1] = dira;
     hitClient = 0;
-    memset(&waterTrace, 0, 16);
     impactDamageDealt = 0;
     if (!ent && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\g_missile.cpp", 1187, 0, "%s", "ent"))
         __debugbreak();
@@ -2201,7 +2197,6 @@ bool    BounceMissile(gentity_s *ent, trace_t *trace)
     float v37; // [esp+E8h] [ebp-104h]
     float oldCycle; // [esp+ECh] [ebp-100h]
     float wobbleFreq; // [esp+F0h] [ebp-FCh]
-    trace_t sideTrace; // [esp+F4h] [ebp-F8h] BYREF
     float *v41; // [esp+12Ch] [ebp-C0h]
     float *v42; // [esp+130h] [ebp-BCh]
     float mag; // [esp+134h] [ebp-B8h]
@@ -2237,7 +2232,6 @@ bool    BounceMissile(gentity_s *ent, trace_t *trace)
     //
     //v69 = a1;
     //enta = (gentity_s *)vars0;
-    memset(&tempTrace, 0, 16);
     if (!ent->s.weapon
         && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\g_missile.cpp", 529, 0, "%s", "ent->s.weapon"))
     {
@@ -2342,7 +2336,7 @@ bool    BounceMissile(gentity_s *ent, trace_t *trace)
         }
         if (slideDir[2] < 25.0 && trace->normal.vec.v[2] > 0.69999999)
         {
-            memset(&sideTrace, 0, 16);
+            trace_t sideTrace; // [esp+F4h] [ebp-F8h] BYREF
             wobbleFreq = slideSpeed * grenadeWobbleFreq->current.value;
             oldCycle = ent->mover.apos2[2];
             for (ent->mover.apos2[2] = (float)((float)((float)(wobbleFreq * 0.050000001) * 2.0) * 3.1415901)
@@ -3816,7 +3810,6 @@ void __cdecl GuidedMissileSteering(gentity_s *ent)
     float v1; // [esp+14h] [ebp-124h]
     float value; // [esp+18h] [ebp-120h]
     gentity_s *v3; // [esp+54h] [ebp-E4h]
-    trace_t tr; // [esp+58h] [ebp-E0h] BYREF
     float v5; // [esp+94h] [ebp-A4h]
     float v6; // [esp+98h] [ebp-A0h]
     float v7; // [esp+9Ch] [ebp-9Ch]
@@ -3961,7 +3954,8 @@ void __cdecl GuidedMissileSteering(gentity_s *ent)
                 targetPos[0] = targetPos[0] + origin[0];
                 targetPos[1] = targetPos[1] + origin[1];
                 targetPos[2] = targetPos[2] + origin[2];
-                memset(&tr, 0, 16);
+
+                trace_t tr; // [esp+58h] [ebp-E0h] BYREF
                 G_LocationalTraceAllowChildren(&tr, origin, targetPos, v3->s.number, 0x280E833, 0);
                 if ( tr.fraction < 1.0 )
                     Vec3Lerp(origin, targetPos, tr.fraction, targetPos);
@@ -4829,7 +4823,6 @@ int __cdecl G_PredictMissile(gentity_s *ent, int duration, float *vLandPos, int 
     const WeaponDef *weapDef; // [esp+3B8h] [ebp-10h]
     float traceStart[3]; // [esp+3BCh] [ebp-Ch] BYREF
 
-    memset(&tr, 0, 16);
     memcpy(&pos, &ent->s.lerp.pos, sizeof(pos));
     BG_EvaluateTrajectory(&pos, level.time - 50, org);
     memcpy(&backupEnt, ent, sizeof(backupEnt));

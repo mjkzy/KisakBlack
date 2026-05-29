@@ -278,6 +278,7 @@ void __cdecl Vec3Mad(const float *start, float scale, const float *dir, float *r
 #define VectorMA(...) \
     typedef char VectorMA_From_Quake_Is_Vec3Mad_same_args_though[-1]
 
+bool __cdecl Vec3Compare(const float *a, const float *b);
 void __cdecl Vec3ScaleMad(float scale0, const float *dir0, float scale1, const float *dir1, float *result);
 void __cdecl Vec3Add(const float *a, const float *b, float *sum);
 void __cdecl Vec4Add(const float *a, const float *b, float *sum);

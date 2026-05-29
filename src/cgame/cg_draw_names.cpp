@@ -396,7 +396,6 @@ char __cdecl CG_CanSeeFriendlyHead(int localClientNum, const centity_s *cent)
     unsigned __int16 hitEntId; // [esp+DCh] [ebp-8h]
     float dot; // [esp+E0h] [ebp-4h]
 
-    memset(&trace, 0, 16);
     if ( cg_drawThroughWalls->current.enabled )
         return 1;
     cgameGlob = CG_GetLocalClientGlobals(localClientNum);

@@ -1200,11 +1200,6 @@ FxUpdateResult __cdecl FX_UpdateElement(
     return updateResult;
 }
 
-bool __cdecl Vec3Compare(const float *a, const float *b)
-{
-    return *a == *b && a[1] == b[1] && a[2] == b[2];
-}
-
 const FxElemDef *__cdecl FX_GetUpdateElemDef(const FxUpdateElem *update)
 {
     if ( !update->effect

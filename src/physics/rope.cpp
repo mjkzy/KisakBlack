@@ -1659,8 +1659,6 @@ void __cdecl Rope_CollideWorld(int rope_index)
     //visitor.__vftable = (colgeom_visitor_inlined_t<200>_vtbl *)&colgeom_visitor_inlined_t<200>::`vftable';
     //colgeom_visitor_inlined_t<500>::reset(&visitor);
     mask = 0x280EC93;
-    memset(&trace, 0, 16);
-    memset(&trace1, 0, 16);
     //col_context_t::col_context_t(&context);
     if ( rope->m_in_use )
     {

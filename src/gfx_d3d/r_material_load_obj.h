@@ -1,7 +1,10 @@
 #pragma once
 
 #include "r_material.h"
-#include <d3dx9.h>
+
+struct _D3DXSHADER_CONSTANTTABLE;
+class ID3DXBuffer;
+struct _D3DXSEMANTIC;
 
 enum MtlParseSuccess : __int32
 {                                       // XREF: Material_ParseRuleSetCondition/r
@@ -34,104 +37,49 @@ enum MaterialUpdateFrequency : __int32
 enum MaterialTextureSource : __int32
 {                                       // XREF: CodeSamplerSource/r
     TEXTURE_SRC_CODE_BLACK           = 0x0,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_WHITE           = 0x1,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_IDENTITY_NORMAL_MAP = 0x2,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_MODEL_LIGHTING  = 0x3,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_LIGHTMAP_PRIMARY = 0x4,
-                                        // XREF: .rdata:s_lightmapSamplers/s
-                                        // .rdata:s_codeSamplers/s ...
     TEXTURE_SRC_CODE_LIGHTMAP_SECONDARY = 0x5,
-                                        // XREF: .rdata:s_lightmapSamplers/s
-                                        // .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_SHADOWMAP_SUN   = 0x6,
-                                        // XREF: .rdata:s_codeSamplers/s
-                                        // .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_SHADOWMAP_SPOT  = 0x7,
-                                        // XREF: .rdata:s_codeSamplers/s
-                                        // .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_FEEDBACK        = 0x8,
-                                        // XREF: .rdata:s_codeSamplers/s
-                                        // .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_RESOLVED_POST_SUN = 0x9,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_RESOLVED_SCENE  = 0xA,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_POST_EFFECT_SRC = 0xB,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_POST_EFFECT_GODRAYS = 0xC,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_POST_EFFECT_0   = 0xD,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_POST_EFFECT_1   = 0xE,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_SKY             = 0xF,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_LIGHT_ATTENUATION = 0x10,
-                                        // XREF: .rdata:s_lightSamplers/s
-                                        // .rdata:s_codeSamplers/s ...
     TEXTURE_SRC_CODE_DLIGHT_ATTENUATION = 0x11,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_OUTDOOR         = 0x12,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_FLOATZ          = 0x13,
-                                        // XREF: .rdata:s_codeSamplers/s
-                                        // .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_PROCESSED_FLOATZ = 0x14,
-                                        // XREF: .rdata:s_codeSamplers/s
-                                        // .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_RAW_FLOATZ      = 0x15,
-                                        // XREF: .rdata:s_codeSamplers/s
-                                        // .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_CASE_TEXTURE    = 0x16,
     TEXTURE_SRC_CODE_CINEMATIC_Y     = 0x17,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_CINEMATIC_CR    = 0x18,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_CINEMATIC_CB    = 0x19,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_CINEMATIC_A     = 0x1A,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_REFLECTION_PROBE = 0x1B,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_FEATHER_FLOAT_Z = 0x1C,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_TERRAIN_SCORCH_TEXTURE_0 = 0x1D,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_TERRAIN_SCORCH_TEXTURE_1 = 0x1E,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_TERRAIN_SCORCH_TEXTURE_2 = 0x1F,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_TERRAIN_SCORCH_TEXTURE_3 = 0x20,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_TERRAIN_SCORCH_TEXTURE_LAST = 0x20,
     TEXTURE_SRC_CODE_LIGHTMAP_SECONDARYB = 0x21,
-                                        // XREF: .rdata:s_lightmapSamplers/s
-                                        // .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_TEXTURE_0       = 0x22,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_TEXTURE_1       = 0x23,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_TEXTURE_2       = 0x24,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_TEXTURE_3       = 0x25,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_IMPACT_MASK     = 0x26,
-                                        // XREF: .rdata:s_codeSamplers/s
-                                        // .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_UI3D            = 0x27,
-                                        // XREF: .rdata:s_codeSamplers/s
-                                        // .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_MISSILE_CAM     = 0x28,
-                                        // XREF: .rdata:s_codeSamplers/s
-                                        // .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_COMPOSITE_RESULT = 0x29,
-                                        // XREF: .rdata:s_codeSamplers/s
     TEXTURE_SRC_CODE_HEATMAP         = 0x2A,
-                                        // XREF: .rdata:s_defaultCodeSamplers/s
     TEXTURE_SRC_CODE_COUNT           = 0x2B,
 };
 

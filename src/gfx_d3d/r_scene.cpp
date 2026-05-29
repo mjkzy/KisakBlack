@@ -3557,27 +3557,11 @@ void __cdecl R_GenerateSortedDrawSurfs(
     {
         viewInfo->isMissileCamera = 1;
         viewInfo->sceneComposition.mainSceneMSAA = R_RENDERTARGET_MISSILE_CAM;
-        image = gfxRenderTargets[R_RENDERTARGET_FLOAT_Z_MISSILE_CAM].image;
-        if ( viewInfo == (GfxViewInfo *)-9872
-            && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h", 1850, 0, "%s", "input") )
-        {
-            __debugbreak();
-        }
-        viewInfo->input.codeImages[19] = image;
-        v18 = rt.image;
-        if ( viewInfo == (GfxViewInfo *)-9872
-            && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h", 1850, 0, "%s", "input") )
-        {
-            __debugbreak();
-        }
-        viewInfo->input.codeImages[9] = v18;
-        blackImage = rgp.blackImage;
-        if ( viewInfo == (GfxViewInfo *)-9872
-            && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h", 1850, 0, "%s", "input") )
-        {
-            __debugbreak();
-        }
-        viewInfo->input.codeImages[11] = blackImage;
+
+        R_SetInputCodeImage(&viewInfo->input, TEXTURE_SRC_CODE_FLOATZ, gfxRenderTargets[R_RENDERTARGET_FLOAT_Z_MISSILE_CAM].image);
+        R_SetInputCodeImage(&viewInfo->input, TEXTURE_SRC_CODE_RESOLVED_POST_SUN, rt.image);
+        R_SetInputCodeImage(&viewInfo->input, TEXTURE_SRC_CODE_POST_EFFECT_SRC, rgp.blackImage);
+
         R_SetInputCodeConstant(&viewInfo->input, 0xC3u, 1.0, 1.0, 1.0, 1.0);
     }
     else
@@ -4576,60 +4560,29 @@ void __cdecl R_SetFullSceneViewMesh(int viewInfoIndex, GfxViewInfo *viewInfo)
 void __cdecl R_GenerateSortedSunShadowDrawSurfs(GfxViewInfo *viewInfo)
 {
     R_MergeAndEmitSunShadowMapsSurfs(viewInfo);
-    if ( !frontEndDataOut
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_scene.cpp", 3849, 0, "%s", "frontEndDataOut") )
-    {
-        __debugbreak();
-    }
+    iassert(frontEndDataOut);
 }
 
 void __cdecl R_AddEmissiveSpotLight(GfxViewInfo *viewInfo)
 {
-    bool v1; // [esp+8h] [ebp-8h]
-
     frontEndDataOut->emissiveSpotLightCount = 0;
     if ( !viewInfo->isMissileCamera )
     {
-        v1 = r_dlightLimit->current.integer && gfxDrawMethod.drawScene == GFX_DRAW_SCENE_STANDARD;
-        if ( v1 && !R_CullDynamicSpotLightInCameraView() )
+        if (r_dlightLimit->current.integer && gfxDrawMethod.drawScene == GFX_DRAW_SCENE_STANDARD && !R_CullDynamicSpotLightInCameraView() )
         {
-            if ( scene.addedLightCount <= 0
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_scene.cpp",
-                            3899,
-                            0,
-                            "%s",
-                            "scene.addedLightCount > 0") )
-            {
-                __debugbreak();
-            }
-            if ( scene.isAddedLightCulled[0]
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_scene.cpp",
-                            3900,
-                            0,
-                            "%s",
-                            "!scene.isAddedLightCulled[0]") )
-            {
-                __debugbreak();
-            }
-            if ( scene.addedLight[0].type != 2
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_scene.cpp",
-                            3903,
-                            0,
-                            "%s",
-                            "spotLight->type == GFX_LIGHT_TYPE_SPOT") )
-            {
-                __debugbreak();
-            }
-            memcpy(&frontEndDataOut->emissiveSpotLight, scene.addedLight, sizeof(frontEndDataOut->emissiveSpotLight));
+            iassert(scene.addedLightCount > 0);
+            iassert(!scene.isAddedLightCulled[0]);
+
+            GfxLight *spotLight = &scene.addedLight[0];
+            iassert(spotLight->type == GFX_LIGHT_TYPE_SPOT);
+
+            memcpy(&frontEndDataOut->emissiveSpotLight, spotLight, sizeof(GfxLight));
             frontEndDataOut->emissiveSpotLightIndex = 0;
             frontEndDataOut->emissiveSpotDrawSurfCount = 0;
             frontEndDataOut->emissiveSpotDrawSurfs = 0;
             frontEndDataOut->emissiveSpotLightCount = 1;
-            if ( scene.addedLight[0].canUseShadowMap )
-                R_AddDynamicShadowableLight(viewInfo, scene.addedLight);
+            if (spotLight->canUseShadowMap )
+                R_AddDynamicShadowableLight(viewInfo, spotLight);
         }
     }
 }
@@ -4680,52 +4633,12 @@ void __cdecl R_GetPointLightShadowSurfs(
 
     if ( frontEndDataOut->emissiveSpotLightCount )
     {
-        if ( frontEndDataOut->emissiveSpotLightCount != 1
-            && !Assert_MyHandler(
-                        "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_scene.cpp",
-                        4032,
-                        0,
-                        "%s",
-                        "frontEndDataOut->emissiveSpotLightCount == 1") )
-        {
-            __debugbreak();
-        }
-        if ( frontEndDataOut->emissiveSpotLightIndex >= 4
-            && !Assert_MyHandler(
-                        "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_scene.cpp",
-                        4033,
-                        0,
-                        "frontEndDataOut->emissiveSpotLightIndex doesn't index MAX_VISIBLE_DLIGHTS\n\t%i not in [0, %i)",
-                        frontEndDataOut->emissiveSpotLightIndex,
-                        4) )
-        {
-            __debugbreak();
-        }
-        if ( frontEndDataOut->emissiveSpotLightIndex
-            && !Assert_MyHandler(
-                        "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_scene.cpp",
-                        4035,
-                        0,
-                        "%s",
-                        "frontEndDataOut->emissiveSpotLightIndex == 0") )
-        {
-            __debugbreak();
-        }
-        if ( numLights <= 0
-            && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_scene.cpp", 4037, 0, "%s", "numLights > 0") )
-        {
-            __debugbreak();
-        }
-        if ( lights->type != 2
-            && !Assert_MyHandler(
-                        "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_scene.cpp",
-                        4038,
-                        0,
-                        "%s",
-                        "lights[0].type == GFX_LIGHT_TYPE_SPOT") )
-        {
-            __debugbreak();
-        }
+        iassert(frontEndDataOut->emissiveSpotLightCount == 1);
+        bcassert(frontEndDataOut->emissiveSpotLightIndex, MAX_VISIBLE_DLIGHTS);
+        iassert(frontEndDataOut->emissiveSpotLightIndex == 0);
+        iassert(numLights > 0);
+        iassert(lights[0].type == GFX_LIGHT_TYPE_SPOT);
+
         frontEndDataOut->emissiveSpotDrawSurfCount = visibleLights->drawSurfCount;
         frontEndDataOut->emissiveSpotDrawSurfs = visibleLights->drawSurfs;
     }
@@ -4733,52 +4646,48 @@ void __cdecl R_GetPointLightShadowSurfs(
 
 void __cdecl R_SetSunShadowConstants(GfxCmdBufInput *input, const GfxSunShadowProjection *sunProj)
 {
-    R_SetInputCodeConstantFromVec4(input, 0x2Fu, (float*)sunProj->switchPartition);
-    R_SetInputCodeConstantFromVec4(input, 0x30u, (float*)sunProj->shadowmapScale);
+    R_SetInputCodeConstantFromVec4(input, CONST_SRC_CODE_SHADOWMAP_SWITCH_PARTITION, (float*)sunProj->switchPartition);
+    R_SetInputCodeConstantFromVec4(input, CONST_SRC_CODE_SHADOWMAP_SCALE, (float*)sunProj->shadowmapScale);
 }
 
-// local variable allocation has failed, the output may be wrong!
 void    R_SetHeroLighting(GfxCmdBufInput *input, GfxViewInfo *viewInfo)
 {
-    _BYTE x[128]; // [esp+10h] [ebp-17Ch] OVERLAPPED BYREF
-    int integer; // [esp+9Ch] [ebp-F0h]
-    float v5; // [esp+A0h] [ebp-ECh]
-    float v6; // [esp+A4h] [ebp-E8h]
-    _BYTE sc[212]; // [esp+A8h] [ebp-E4h] OVERLAPPED BYREF
-    float s; // [esp+17Ch] [ebp-10h]
-    //float bwght; // [esp+180h] [ebp-Ch]
-    //float gwght; // [esp+184h] [ebp-8h]
-    //float retaddr; // [esp+18Ch] [ebp+0h]
+    DvarValue sc; // [esp+9Ch] [ebp-F0h]
+    GfxMatrix temp; // [esp+B0h] [ebp-DCh] BYREF
+    GfxMatrix color; // [esp+F0h] [ebp-9Ch] BYREF
+    float s; // [esp+170h] [ebp-1Ch]
+    float bwght; // [esp+174h] [ebp-18h]
+    float gwght; // [esp+178h] [ebp-14h]
+    float rwght; // [esp+17Ch] [ebp-10h]
 
-    //bwght = a1;
-    //gwght = retaddr;
-    s = 0.25f;
-    *(float *)&sc[208] = 0.5f;
-    *(float *)&sc[204] = 0.25f;
-    *(unsigned int *)&sc[200] = r_heroLightSaturation->current.integer;
-    s = (float)(1.0 - *(float *)&sc[200]) * 0.25;
-    *(float *)&sc[208] = (float)(1.0 - *(float *)&sc[200]) * 0.5;
-    *(float *)&sc[204] = s;
-    *(float *)&sc[136] = s + *(float *)&sc[200];
-    *(float *)&sc[140] = s;
-    *(float *)&sc[144] = s;
-    *(unsigned int *)&sc[148] = 0;
-    *(float *)&sc[152] = *(float *)&sc[208];
-    *(float *)&sc[156] = *(float *)&sc[208] + *(float *)&sc[200];
-    *(float *)&sc[160] = *(float *)&sc[208];
-    *(unsigned int *)&sc[164] = 0;
-    *(float *)&sc[168] = s;
-    *(float *)&sc[172] = s;
-    *(float *)&sc[176] = s + *(float *)&sc[200];
-    memset(&sc[180], 0, 16);
-    *(float *)&sc[196] = 1.0f;
-    colorTempMatrix((float (*)[4])&sc[72], r_heroLightColorTemp->current.value);
-    MatrixMultiply44((const float (*)[4])&sc[72], (const float (*)[4])&sc[136], (float (*)[4])&sc[8]);
-    *(unsigned int *)&sc[4] = (unsigned int)&r_heroLightScale->current;
-    integer = r_heroLightScale->current.integer;
-    v5 = r_heroLightScale->current.vector[1];
-    v6 = r_heroLightScale->current.vector[2];
-    *(float *)sc = r_heroLightScale->current.vector[3];
+    rwght = 0.25f;
+    gwght = 0.5f;
+    bwght = 0.25f;
+    s = r_heroLightSaturation->current.value;
+    rwght = (float)(1.0 - s) * 0.25;
+    gwght = (float)(1.0 - s) * 0.5;
+    bwght = rwght;
+
+    GfxMatrix saturation; // [esp+130h] [ebp-5Ch] BYREF
+    saturation.m[0][0] = rwght + s;
+    saturation.m[0][1] = rwght;
+    saturation.m[0][2] = rwght;
+    saturation.m[0][3] = 0.0f;
+    saturation.m[1][0] = gwght;
+    saturation.m[1][1] = gwght + s;
+    saturation.m[1][2] = gwght;
+    saturation.m[1][3] = 0.0f;
+    saturation.m[2][0] = rwght;
+    saturation.m[2][1] = rwght;
+    saturation.m[2][2] = rwght + s;
+    saturation.m[2][3] = 0.0f;
+    saturation.m[3][0] = 0.0f;
+    saturation.m[3][1] = 0.0f;
+    saturation.m[3][2] = 0.0f;
+    saturation.m[3][3] = 1.0f;
+    colorTempMatrix(color.m, r_heroLightColorTemp->current.value);
+    MatrixMultiply44(color.m, saturation.m, temp.m);
+    sc = r_heroLightScale->current;
     R_SetInputCodeConstant(
         input,
         0xA9u,
@@ -4786,550 +4695,314 @@ void    R_SetHeroLighting(GfxCmdBufInput *input, GfxViewInfo *viewInfo)
         viewInfo->charPrimaryLightScale.specularScale,
         1.0,
         1.0);
-    *(unsigned int *)&x[64] = integer;
-    memset(&x[68], 0, 16);
-    *(float *)&x[84] = v5;
-    memset(&x[88], 0, 16);
-    *(float *)&x[104] = v6;
-    memset(&x[108], 0, 16);
-    *(float *)&x[124] = 1.0f;
-    MatrixMultiply44((const float (*)[4])&sc[8], (const float (*)[4])&x[64], (float (*)[4])x);
-    R_SetInputCodeConstant(input, 0xA6u, *(float *)x, *(float *)&x[16], *(float *)&x[32], 0.0);
-    R_SetInputCodeConstant(input, 0xA7u, *(float *)&x[4], *(float *)&x[20], *(float *)&x[36], 0.0);
-    R_SetInputCodeConstant(input, 0xA8u, *(float *)&x[8], *(float *)&x[24], *(float *)&x[40], 0.0);
+
+    GfxMatrix scale; // [esp+50h] [ebp-13Ch] BYREF
+    scale.m[0][0] = sc.vector[0];
+    scale.m[0][1] = 0.0f;
+    scale.m[0][2] = 0.0f;
+    scale.m[0][3] = 0.0f;
+    scale.m[1][0] = 0.0f;
+    scale.m[1][1] = sc.vector[1];
+    scale.m[1][2] = 0.0f;
+    scale.m[1][3] = 0.0f;
+    scale.m[2][0] = 0.0f;
+    scale.m[2][1] = 0.0f;
+    scale.m[2][2] = sc.vector[2];
+    scale.m[2][3] = 0.0f;
+    scale.m[3][0] = 0.0f;
+    scale.m[3][1] = 0.0f;
+    scale.m[3][2] = 0.0f;
+    scale.m[3][3] = 1.0f;
+
+    GfxMatrix final; // [esp+10h] [ebp-17Ch] BYREF
+    MatrixMultiply44(temp.m, scale.m, final.m);
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_HERO_LIGHTING_R, final.m[0][0], final.m[1][0], final.m[2][0], 0.0);
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_HERO_LIGHTING_G, final.m[0][1], final.m[1][1], final.m[2][1], 0.0);
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_HERO_LIGHTING_B, final.m[0][2], final.m[1][2], final.m[2][2], 0.0);
 }
 
 void __cdecl R_SetDLightsConstantsDefaults(GfxCmdBufInput *input)
 {
-    GfxImage *v1; // [esp+0h] [ebp-8h]
-    GfxImage *whiteImage; // [esp+4h] [ebp-4h]
-
-    whiteImage = rgp.whiteImage;
-    if ( !input && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h", 1850, 0, "%s", "input") )
-        __debugbreak();
-    input->codeImages[17] = whiteImage;
+    R_SetInputCodeImage(input, TEXTURE_SRC_CODE_DLIGHT_ATTENUATION, rgp.whiteImage);
     R_SetInputCodeImageSamplerState(input, 0x11u, 0x61u);
-    v1 = rgp.whiteImage;
-    if ( !input && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h", 1850, 0, "%s", "input") )
-        __debugbreak();
-    input->codeImages[7] = v1;
+
+    R_SetInputCodeImage(input, TEXTURE_SRC_CODE_SHADOWMAP_SPOT, rgp.whiteImage);
     R_SetInputCodeImageSamplerState(input, 7u, 0x62u);
 }
 
-void __cdecl R_SetInputCodeImageSamplerState(
-                GfxCmdBufInput *input,
-                unsigned int codeTexture,
-                unsigned __int8 samplerState)
-{
-    const char *v3; // eax
-
-    if ( codeTexture >= 0x2B
-        && !Assert_MyHandler(
-                    "c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h",
-                    1832,
-                    0,
-                    "codeTexture doesn't index TEXTURE_SRC_CODE_COUNT\n\t%i not in [0, %i)",
-                    codeTexture,
-                    43) )
-    {
-        __debugbreak();
-    }
-    if ( (samplerState & 7) == 0 )
-    {
-        v3 = va("R_SetCodeImageSamplerState %d %d", codeTexture, samplerState);
-        if ( !Assert_MyHandler(
-                        "c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h",
-                        1833,
-                        0,
-                        "%s\n\t%s",
-                        "samplerState & SAMPLER_FILTER_MASK",
-                        v3) )
-            __debugbreak();
-    }
-    input->codeImageSamplerStates[codeTexture] = samplerState;
-}
-
-#if 0
-// local variable allocation has failed, the output may be wrong!
-void    R_SetDLightsConstants(
-                GfxCmdBufInput *input,
-                const GfxViewInfo *viewInfo,
-                const GfxLight *visibleLights,
-                int visibleLightCount)
-{
-    float v5; // xmm0_4
-    float w; // xmm0_4
-    _BYTE v7[76]; // [esp+20h] [ebp-2ACh] OVERLAPPED BYREF
-    float v8; // [esp+6Ch] [ebp-260h]
-    float y; // [esp+70h] [ebp-25Ch]
-    float eAdd; // [esp+74h] [ebp-258h]
-    float z; // [esp+78h] [ebp-254h]
-    float eMul; // [esp+7Ch] [ebp-250h]
-    float x; // [esp+80h] [ebp-24Ch]
-    float sAdd; // [esp+84h] [ebp-248h]
-    GfxImage *whiteImage; // [esp+88h] [ebp-244h]
-    const GfxImage *sMul; // [esp+8Ch] [ebp-240h]
-    _BYTE v17[80]; // [esp+90h] [ebp-23Ch] OVERLAPPED BYREF
-    float v18; // [esp+E0h] [ebp-1ECh]
-    float eyeOffset[4]; // [esp+E4h] [ebp-1E8h]
-    float *v20; // [esp+F4h] [ebp-1D8h]
-    float value; // [esp+F8h] [ebp-1D4h]
-    float *v23; // [esp+100h] [ebp-1CCh]
-    float *v24; // [esp+104h] [ebp-1C8h]
-    unsigned int j; // [esp+108h] [ebp-1C4h]
-    float *v26; // [esp+10Ch] [ebp-1C0h]
-    _BYTE *v27; // [esp+110h] [ebp-1BCh]
-    unsigned int sli; // [esp+114h] [ebp-1B8h]
-    _BYTE *v29; // [esp+118h] [ebp-1B4h]
-    float *v30; // [esp+11Ch] [ebp-1B0h]
-    _BYTE *v31; // [esp+120h] [ebp-1ACh]
-    float44 *p_projMatrix; // [esp+124h] [ebp-1A8h]
-    float *v33; // [esp+128h] [ebp-1A4h]
-    _BYTE *v34; // [esp+12Ch] [ebp-1A0h]
-    float *v35; // [esp+130h] [ebp-19Ch]
-    _BYTE *v36; // [esp+134h] [ebp-198h]
-    float *v37; // [esp+138h] [ebp-194h]
-    _BYTE *v38; // [esp+13Ch] [ebp-190h]
-    float44 *p_viewMatrix; // [esp+140h] [ebp-18Ch]
-    float *dir; // [esp+144h] [ebp-188h]
-    float *attenuation; // [esp+148h] [ebp-184h]
-    float *v42; // [esp+14Ch] [ebp-180h]
-    float *origin; // [esp+150h] [ebp-17Ch]
-    float v44; // [esp+154h] [ebp-178h]
-    int i; // [esp+158h] [ebp-174h]
-    GfxSpotShadow *v46; // [esp+15Ch] [ebp-170h]
-    _BYTE scale[140]; // [esp+160h] [ebp-16Ch] OVERLAPPED BYREF
-    float farEdge; // [esp+1ECh] [ebp-E0h]
-    int nearEdge; // [esp+1F0h] [ebp-DCh]
-    float cutOff; // [esp+1F4h] [ebp-D8h]
-    float cutOn; // [esp+1F8h] [ebp-D4h]
-    int lightExponent; // [esp+1FCh] [ebp-D0h]
-    float lightCosHalfFovOuter; // [esp+200h] [ebp-CCh]
-    float lightCosHalfFovInner; // [esp+204h] [ebp-C8h]
-    float spotShadowFade; // [esp+208h] [ebp-C4h]
-    float lightRadius; // [esp+20Ch] [ebp-C0h]
-    float lightDir[3]; // [esp+210h] [ebp-BCh] BYREF
-    float lightAttentuation[4]; // [esp+21Ch] [ebp-B0h] BYREF
-    float lightOrigin[4]; // [esp+22Ch] [ebp-A0h]
-    float v60; // [esp+23Ch] [ebp-90h]
-    float specularColor[3]; // [esp+240h] [ebp-8Ch] BYREF
-    float diffuseColor[3]; // [esp+24Ch] [ebp-80h] BYREF
-    GfxLightDef *lightDef; // [esp+258h] [ebp-74h]
-    float blues[4]; // [esp+25Ch] [ebp-70h] BYREF
-    float greens[4]; // [esp+26Ch] [ebp-60h] BYREF
-    float reds[4]; // [esp+27Ch] [ebp-50h] BYREF
-    float falloffs[4]; // [esp+28Ch] [ebp-40h] BYREF
-    float zs[4]; // [esp+29Ch] [ebp-30h] BYREF
-    float ys[4]; // [esp+2ACh] [ebp-20h] BYREF
-    float xs[4]; // [esp+2BCh] [ebp-10h]
-    float retaddr; // [esp+2CCh] [ebp+0h]
-
-    xs[1] = a1;
-    xs[2] = retaddr;
-    xs[0] = 0.0f;
-    memset(ys, 0, sizeof(ys));
-    memset(zs, 0, sizeof(zs));
-    memset(falloffs, 0, sizeof(falloffs));
-    memset(reds, 0, sizeof(reds));
-    memset(greens, 0, sizeof(greens));
-    lightDef = *(GfxLightDef **)&FLOAT_0_0;
-    memset(blues, 0, sizeof(blues));
-    memset(diffuseColor, 0, sizeof(diffuseColor));
-    memset(specularColor, 0, sizeof(specularColor));
-    lightOrigin[2] = 0.0f;
-    lightOrigin[3] = 0.0f;
-    v60 = 0.0f;
-    lightOrigin[0] = 1.0f;
-    memset(lightDir, 0, sizeof(lightDir));
-    memset(lightAttentuation, 0, sizeof(lightAttentuation));
-    lightCosHalfFovInner = 0.0f;
-    spotShadowFade = 0.0f;
-    lightRadius = 0.0f;
-    lightCosHalfFovOuter = 0.0f;
-    lightExponent = 0;
-    cutOn = 0.0f;
-    cutOff = 0.0f;
-    nearEdge = 0;
-    farEdge = 0.0f;
-    memset(scale, 0, sizeof(scale));
-    v46 = 0;
-    for ( i = 0; i < visibleLightCount; ++i )
-    {
-        if ( visibleLights[i].type == 3 )
-        {
-            ys[i + 1] = visibleLights[i].origin[0] - viewInfo->cullViewInfo.viewParms.origin[0];
-            zs[i + 1] = visibleLights[i].origin[1] - viewInfo->cullViewInfo.viewParms.origin[1];
-            falloffs[i + 1] = visibleLights[i].origin[2] - viewInfo->cullViewInfo.viewParms.origin[2];
-            reds[i + 1] = -1.0 / (float)(visibleLights[i].radius * visibleLights[i].radius);
-            v44 = 1.0 / viewInfo->exposureRemap.remapMul[0];
-            greens[i + 1] = (float)(visibleLights[i].diffuseColor[0] * r_diffuseColorScale->current.value) * v44;
-            blues[i + 1] = (float)(visibleLights[i].diffuseColor[1] * r_diffuseColorScale->current.value) * v44;
-            diffuseColor[i + 1] = (float)(visibleLights[i].diffuseColor[2] * r_diffuseColorScale->current.value) * v44;
-        }
-        else
-        {
-            if ( visibleLights[i].type != 2
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_scene.cpp",
-                            4490,
-                            0,
-                            "%s",
-                            "visibleLights[li].type == GFX_LIGHT_TYPE_SPOT") )
-            {
-                __debugbreak();
-            }
-            diffuseColor[0] = *(float *)&visibleLights[i].def;
-            origin = viewInfo->cullViewInfo.viewParms.origin;
-            v42 = visibleLights[i].origin;
-            lightAttentuation[1] = *v42 - viewInfo->cullViewInfo.viewParms.origin[0];
-            lightAttentuation[2] = visibleLights[i].origin[1] - viewInfo->cullViewInfo.viewParms.origin[1];
-            lightAttentuation[3] = visibleLights[i].origin[2] - viewInfo->cullViewInfo.viewParms.origin[2];
-            lightCosHalfFovOuter = visibleLights[i].radius;
-            attenuation = visibleLights[i].attenuation;
-            lightDir[0] = *attenuation;
-            lightDir[1] = visibleLights[i].attenuation[1];
-            lightDir[2] = visibleLights[i].attenuation[2];
-            lightAttentuation[0] = visibleLights[i].attenuation[3];
-            lightDir[0] = lightDir[0] + 0.000015287891;
-            dir = visibleLights[i].dir;
-            lightCosHalfFovInner = *dir;
-            spotShadowFade = visibleLights[i].dir[1];
-            lightRadius = visibleLights[i].dir[2];
-            cutOn = visibleLights[i].cosHalfFovInner;
-            cutOff = visibleLights[i].cosHalfFovOuter;
-            nearEdge = visibleLights[i].exponent;
-            farEdge = visibleLights[i].falloff[0];
-            *(float *)&scale[136] = visibleLights[i].falloff[1];
-            *(float *)&scale[132] = visibleLights[i].falloff[2];
-            *(float *)&scale[128] = visibleLights[i].falloff[3];
-            p_viewMatrix = &visibleLights[i].viewMatrix;
-            *(_QWORD *)&scale[64] = *(_QWORD *)&p_viewMatrix->m[0][0];
-            *(float *)&scale[72] = visibleLights[i].viewMatrix.m[0][2];
-            *(float *)&scale[76] = visibleLights[i].viewMatrix.m[0][3];
-            v38 = &scale[80];
-            v37 = visibleLights[i].viewMatrix.m[1];
-            *(float *)&scale[80] = *v37;
-            *(float *)&scale[84] = visibleLights[i].viewMatrix.m[1][1];
-            *(float *)&scale[88] = visibleLights[i].viewMatrix.m[1][2];
-            *(float *)&scale[92] = visibleLights[i].viewMatrix.m[1][3];
-            v36 = &scale[96];
-            v35 = visibleLights[i].viewMatrix.m[2];
-            *(float *)&scale[96] = *v35;
-            *(float *)&scale[100] = visibleLights[i].viewMatrix.m[2][1];
-            *(float *)&scale[104] = visibleLights[i].viewMatrix.m[2][2];
-            *(float *)&scale[108] = visibleLights[i].viewMatrix.m[2][3];
-            v34 = &scale[112];
-            v33 = visibleLights[i].viewMatrix.m[3];
-            *(float *)&scale[112] = *v33;
-            *(float *)&scale[116] = visibleLights[i].viewMatrix.m[3][1];
-            *(float *)&scale[120] = visibleLights[i].viewMatrix.m[3][2];
-            *(float *)&scale[124] = visibleLights[i].viewMatrix.m[3][3];
-            p_projMatrix = &visibleLights[i].projMatrix;
-            *(float *)scale = p_projMatrix->m[0][0];
-            *(float *)&scale[4] = visibleLights[i].projMatrix.m[0][1];
-            *(float *)&scale[8] = visibleLights[i].projMatrix.m[0][2];
-            *(float *)&scale[12] = visibleLights[i].projMatrix.m[0][3];
-            v31 = &scale[16];
-            v30 = visibleLights[i].projMatrix.m[1];
-            *(float *)&scale[16] = *v30;
-            *(float *)&scale[20] = visibleLights[i].projMatrix.m[1][1];
-            *(float *)&scale[24] = visibleLights[i].projMatrix.m[1][2];
-            *(float *)&scale[28] = visibleLights[i].projMatrix.m[1][3];
-            v29 = &scale[32];
-            sli = (unsigned int)visibleLights[i].projMatrix.m[2];
-            *(float *)&scale[32] = *(float *)sli;
-            *(float *)&scale[36] = visibleLights[i].projMatrix.m[2][1];
-            *(float *)&scale[40] = visibleLights[i].projMatrix.m[2][2];
-            *(float *)&scale[44] = visibleLights[i].projMatrix.m[2][3];
-            v27 = &scale[48];
-            v26 = visibleLights[i].projMatrix.m[3];
-            *(float *)&scale[48] = *v26;
-            *(float *)&scale[52] = visibleLights[i].projMatrix.m[3][1];
-            *(float *)&scale[56] = visibleLights[i].projMatrix.m[3][2];
-            *(float *)&scale[60] = visibleLights[i].projMatrix.m[3][3];
-            for ( j = 0; j < frontEndDataOut->shadowableLightCount; ++j )
-            {
-                if ( frontEndDataOut->shadowableLights[j].type == 2
-                    && frontEndDataOut->shadowableLights[j].spotShadowIndex != -1
-                    && visibleLights[i].def == frontEndDataOut->shadowableLights[j].def )
-                {
-                    v24 = frontEndDataOut->shadowableLights[j].origin;
-                    v23 = visibleLights[i].origin;
-                    if ( *v23 == *v24 && v23[1] == v24[1] && v23[2] == v24[2] )
-                    {
-                        v46 = &frontEndDataOut->spotShadows[frontEndDataOut->shadowableLights[j].spotShadowIndex];
-                        lightExponent = LODWORD(v46->fade);
-                        break;
-                    }
-                }
-            }
-            value = r_diffuseColorScale->current.value;
-            v20 = visibleLights[i].diffuseColor;
-            specularColor[0] = value * *v20;
-            specularColor[1] = value * visibleLights[i].diffuseColor[1];
-            specularColor[2] = value * visibleLights[i].diffuseColor[2];
-            eyeOffset[3] = r_specularColorScale->current.value;
-            LODWORD(eyeOffset[2]) = visibleLights[i].specularColor;
-            lightOrigin[2] = eyeOffset[3] * *(float *)LODWORD(eyeOffset[2]);
-            lightOrigin[3] = eyeOffset[3] * visibleLights[i].specularColor[1];
-            v60 = eyeOffset[3] * visibleLights[i].specularColor[2];
-        }
-    }
-    R_SetInputCodeConstant(input, 0x8Bu, ys[1], ys[2], ys[3], xs[0]);
-    R_SetInputCodeConstant(input, 0x8Cu, zs[1], zs[2], zs[3], ys[0]);
-    R_SetInputCodeConstant(input, 0x8Du, falloffs[1], falloffs[2], falloffs[3], zs[0]);
-    R_SetInputCodeConstant(input, 0x8Eu, reds[1], reds[2], reds[3], falloffs[0]);
-    R_SetInputCodeConstant(input, 0x8Fu, greens[1], greens[2], greens[3], reds[0]);
-    R_SetInputCodeConstant(input, 0x90u, blues[1], blues[2], blues[3], greens[0]);
-    R_SetInputCodeConstant(input, 0x91u, diffuseColor[1], diffuseColor[2], *(float *)&lightDef, blues[0]);
-    if ( viewInfo->cullViewInfo.viewParms.origin[3] == 0.0 )
-    {
-        *(unsigned int *)&v17[72] = 0;
-        *(unsigned int *)&v17[76] = 0;
-        v18 = 0.0f;
-    }
-    else
-    {
-        LODWORD(eyeOffset[1]) = viewInfo->cullViewInfo.viewParms.origin;
-        *(_QWORD *)&v17[72] = *(_QWORD *)viewInfo->viewParms.origin;
-        v18 = viewInfo->cullViewInfo.viewParms.origin[2];
-    }
-    eyeOffset[0] = 1.0f;
-    if ( LODWORD(diffuseColor[0]) )
-    {
-        *(unsigned int *)&v17[68] = *(unsigned int *)(LODWORD(diffuseColor[0]) + 4);
-        if ( !input && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h", 1850, 0, "%s", "input") )
-            __debugbreak();
-        input->codeImages[17] = *(const GfxImage **)&v17[68];
-        R_SetInputCodeImageSamplerState(input, 0x11u, *(_BYTE *)(LODWORD(diffuseColor[0]) + 8));
-    }
-    else
-    {
-        *(unsigned int *)&v17[64] = rgp.whiteImage;
-        if ( !input && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h", 1850, 0, "%s", "input") )
-            __debugbreak();
-        input->codeImages[17] = *(const GfxImage **)&v17[64];
-        R_SetInputCodeImageSamplerState(input, 0x11u, 0x61u);
-    }
-    if ( v46 )
-    {
-        memcpy(v17, &v46->lookupMatrix, 0x40u);
-        MatrixTransformVector44((const float *)&v17[72], (const float (*)[4])v17, (float *)&v17[48]);
-        R_SetInputCodeConstantFromVec4(input, 0x9Du, (float *)v17);
-        R_SetInputCodeConstantFromVec4(input, 0x9Eu, (float *)&v17[16]);
-        R_SetInputCodeConstantFromVec4(input, 0x9Fu, (float *)&v17[32]);
-        R_SetInputCodeConstantFromVec4(input, 0xA0u, (float *)&v17[48]);
-        sMul = v46->image;
-        if ( !input && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h", 1850, 0, "%s", "input") )
-            __debugbreak();
-        input->codeImages[7] = sMul;
-        R_SetInputCodeImageSamplerState(input, 7u, 0x62u);
-        R_SetInputCodeConstantFromVec4(input, 0x47u, v46->pixelAdjust);
-    }
-    else
-    {
-        whiteImage = rgp.whiteImage;
-        if ( !input && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h", 1850, 0, "%s", "input") )
-            __debugbreak();
-        input->codeImages[7] = whiteImage;
-        R_SetInputCodeImageSamplerState(input, 7u, 0x62u);
-    }
-    R_SetInputCodeConstantFromVec4(input, 0x95u, lightDir);
-    if ( farEdge == *(float *)&scale[132] )
-        sAdd = 1.0f;
-    else
-        sAdd = 1.0 / (float)(*(float *)&scale[132] - farEdge);
-    x = sAdd;
-    if ( farEdge == *(float *)&scale[132] )
-        v5 = -farEdge;
-    else
-        v5 = COERCE_FLOAT(LODWORD(farEdge) ^ _mask__NegFloat_) * (float)(1.0 / (float)(*(float *)&scale[132] - farEdge));
-    eMul = v5;
-    z = v5;
-    if ( *(float *)&scale[128] == *(float *)&scale[136] )
-        eAdd = 1.0f;
-    else
-        eAdd = 1.0 / (float)(*(float *)&scale[136] - *(float *)&scale[128]);
-    y = eAdd;
-    if ( *(float *)&scale[128] == *(float *)&scale[136] )
-        LODWORD(w) = *(unsigned int *)&scale[128] ^ _mask__NegFloat_;
-    else
-        w = COERCE_FLOAT(*(unsigned int *)&scale[128] ^ _mask__NegFloat_)
-            * (float)(1.0 / (float)(*(float *)&scale[136] - *(float *)&scale[128]));
-    v8 = w;
-    *(float *)&v7[72] = w;
-    R_SetInputCodeConstant(input, 0x96u, x, y, z, w);
-    MatrixTransformVector44(&lightAttentuation[1], (const float (*)[4])&scale[64], (float *)&scale[112]);
-    *(unsigned int *)&v7[68] = &scale[112];
-    *(unsigned int *)&v7[64] = &scale[112];
-    *(unsigned int *)&scale[112] ^= _mask__NegFloat_;
-    *(unsigned int *)&scale[116] ^= _mask__NegFloat_;
-    *(unsigned int *)&scale[120] ^= _mask__NegFloat_;
-    MatrixMultiply44((const float (*)[4])&scale[64], (const float (*)[4])scale, (float (*)[4])v7);
-    R_SetInputCodeConstant(input, 0x97u, *(float *)v7, *(float *)&v7[16], *(float *)&v7[32], *(float *)&v7[48]);
-    R_SetInputCodeConstant(input, 0x98u, *(float *)&v7[4], *(float *)&v7[20], *(float *)&v7[36], *(float *)&v7[52]);
-    R_SetInputCodeConstant(input, 0x99u, *(float *)&v7[8], *(float *)&v7[24], *(float *)&v7[40], *(float *)&v7[56]);
-    R_SetInputCodeConstant(input, 0x9Au, *(float *)&v7[12], *(float *)&v7[28], *(float *)&v7[44], *(float *)&v7[60]);
-    R_SetInputCodeConstant(
-        input,
-        0x92u,
-        lightAttentuation[1],
-        lightAttentuation[2],
-        lightAttentuation[3],
-        1.0 / (float)(lightCosHalfFovOuter * lightCosHalfFovOuter));
-    R_SetInputCodeConstant(input, 0x93u, specularColor[0], specularColor[1], specularColor[2], 1.0);
-    R_SetInputCodeConstant(input, 0x94u, lightOrigin[2], lightOrigin[3], v60, 1.0);
-    R_SetInputCodeConstant(input, 0x9Bu, lightCosHalfFovInner, spotShadowFade, lightRadius, 0.0);
-    R_SetInputCodeConstant(
-        input,
-        0x9Cu,
-        1.0 / (float)(cutOn - cutOff),
-        COERCE_FLOAT(COERCE_UNSIGNED_INT(1.0 / (float)(cutOn - cutOff)) ^ _mask__NegFloat_) * cutOff,
-        0.0,
-        *(float *)&lightExponent);
-}
-#endif
-
+// aislop
 void R_SetDLightsConstants(
     GfxCmdBufInput *input,
     const GfxViewInfo *viewInfo,
     const GfxLight *visibleLights,
     int visibleLightCount)
 {
-    float xs[4] = {};
-    float ys[4] = {};
-    float zs[4] = {};
-    float falloffs[4] = {};
-    float reds[4] = {};
-    float greens[4] = {};
-    float blues[4] = {};
-    float diffusePacked[4] = {};
+    // ---- Per-omni SoA arrays ([0] always 0; loop writes [i+1]) ----
+    float xs[4]           = {};  // unused; just holds the 0 used as slot 0x8B's W
+    float ys[4]           = {};  // omni X positions, view-relative
+    float zs[4]           = {};  // omni Y positions
+    float falloffs[4]     = {};  // omni Z positions
+    float reds[4]         = {};  // omni -1/r^2
+    float greens[4]       = {};  // omni R-diffuse scaled
+    float blues[4]        = {};  // omni G-diffuse scaled
+    float diffuseColor[4] = {};  // [0]=spot lightDef ptr (alias), [1..3]=omni B-diffuse
 
-    float specularColor[3] = {};
-    float lightOrigin[4] = { 1.0f, 0, 0, 0 };
-    float lightDir[3] = {};
-    float lightAttenuation[4] = {};
+    // ---- Spot-light scratch (only populated if a spot is processed) ----
+    float lightAttentuation[4] = {};                          // [0]=L.attenuation[3], [1..3]=pos view-rel
+    float lightDir[3]          = {};                          // = L.attenuation[0..2]
+    float specularColor[3]     = {};                          // = L.diffuseColor * diffuseScale
+    float lightOrigin[4]       = { 1.0f, 0.0f, 0.0f, 0.0f };  // [2..3] = spec[0..1] scaled
+    float v60                  = 0.0f;                        // = spec[2] scaled
 
-    const GfxLightDef *lightDef = nullptr;
+    float lightCosHalfFovInner = 0.0f;   // = L.dir[0]
+    float spotShadowFade       = 0.0f;   // = L.dir[1]
+    float lightRadius          = 0.0f;   // = L.dir[2]
+    float lightCosHalfFovOuter = 0.0f;   // = L.radius
+    int   lightExponent        = 0;      // = spotShadow->fade bits on shadow-match, else 0
+    float cutOn = 0.0f, cutOff = 0.0f;   // = L.cosHalfFovInner / cosHalfFovOuter
+
+    // Spot view/proj matrices and the light's falloff[0..3] kept verbatim.
+    float viewMatrix[4][4]    = {};  // = L.viewMatrix.m (4th row reused as scratch below)
+    float projMatrix[4][4]    = {};  // = L.projMatrix.m
+    float falloffParams[4]    = {};  // = L.falloff[0..3]
+
     const GfxSpotShadow *spotShadow = nullptr;
 
-    float viewMatrix[16] = {};
-    float projMatrix[16] = {};
-    float falloffParams[4] = {};
-
-    float cosHalfFovInner = 0.0f;
-    float cosHalfFovOuter = 0.0f;
-    float spotShadowFade = 0.0f;
-    float lightRadius = 0.0f;
-    int   lightExponent = 0;
-
-    float cutOn = 0.0f;
-    float cutOff = 0.0f;
-
-    float exposureInv = 1.0f / viewInfo->exposureRemap.remapMul[0];
-    float diffuseScale = r_diffuseColorScale->current.value;
-
-    int pointIndex = 1;
-
-    for (int i = 0; i < visibleLightCount && pointIndex <= 3; ++i)
+    // ===== Accumulate per-light data =====
+    // IDA original uses `ys[i + 1]` etc. — indexed by the visible-light index. That's a
+    // latent OOB: the arrays are float[4], the upload only consumes slots [1..3], and the
+    // loop bound is `visibleLightCount` with no cap. When the caller passes 4+ visible
+    // lights (e.g. 1 spot + 3 omnis, or 4 omnis), the last omni's `i+1` lands at array
+    // index 4, smashing the next stack local. BO presumably relied on caller-side filtering
+    // to never trigger this; the kisak port hits it. We use a dedicated omni counter
+    // capped at 3 so writes stay in-range.
+    int omniIndex = 1;
+    for (int i = 0; i < visibleLightCount; ++i)
     {
         const GfxLight &L = visibleLights[i];
 
         if (L.type == GFX_LIGHT_TYPE_OMNI)
         {
-            ys[pointIndex] = L.origin[0] - viewInfo->viewParms.origin[0];
-            zs[pointIndex] = L.origin[1] - viewInfo->viewParms.origin[1];
-            falloffs[pointIndex] = L.origin[2] - viewInfo->viewParms.origin[2];
+            if (omniIndex > 3)
+                continue;  // only 3 packed omni slots available; ignore the rest
 
-            reds[pointIndex] = -1.0f / (L.radius * L.radius);
+            ys[omniIndex]       = L.origin[0] - viewInfo->cullViewInfo.viewParms.origin[0];
+            zs[omniIndex]       = L.origin[1] - viewInfo->cullViewInfo.viewParms.origin[1];
+            falloffs[omniIndex] = L.origin[2] - viewInfo->cullViewInfo.viewParms.origin[2];
+            reds[omniIndex]     = -1.0f / (L.radius * L.radius);
 
-            greens[pointIndex] =
-                L.diffuseColor[0] * diffuseScale * exposureInv;
-            blues[pointIndex] =
-                L.diffuseColor[1] * diffuseScale * exposureInv;
-            diffusePacked[pointIndex] =
-                L.diffuseColor[2] * diffuseScale * exposureInv;
-
-            ++pointIndex;
+            const float exposureInv  = 1.0f / viewInfo->exposureRemap.remapMul[0];
+            const float diffuseScale = r_diffuseColorScale->current.value;
+            greens[omniIndex]       = (L.diffuseColor[0] * diffuseScale) * exposureInv;
+            blues[omniIndex]        = (L.diffuseColor[1] * diffuseScale) * exposureInv;
+            diffuseColor[omniIndex] = (L.diffuseColor[2] * diffuseScale) * exposureInv;
+            ++omniIndex;
         }
         else
         {
-            // ---- SPOT LIGHT ----
-            lightDef = L.def;
+            iassert(L.type == GFX_LIGHT_TYPE_SPOT);
 
-            lightAttenuation[1] = L.origin[0] - viewInfo->viewParms.origin[0];
-            lightAttenuation[2] = L.origin[1] - viewInfo->viewParms.origin[1];
-            lightAttenuation[3] = L.origin[2] - viewInfo->viewParms.origin[2];
+            // Stash spot lightDef pointer bit-aliased into diffuseColor[0]. The non-null
+            // check below is what triggers the spot's attenuation-image binding.
+            *(const GfxLightDef **)&diffuseColor[0] = L.def;
 
-            cosHalfFovOuter = L.radius;
+            lightAttentuation[1] = L.origin[0] - viewInfo->cullViewInfo.viewParms.origin[0];
+            lightAttentuation[2] = L.origin[1] - viewInfo->cullViewInfo.viewParms.origin[1];
+            lightAttentuation[3] = L.origin[2] - viewInfo->cullViewInfo.viewParms.origin[2];
+            lightCosHalfFovOuter = L.radius;
 
-            lightDir[0] = L.attenuation[0] + 1.5287891e-5f;
+            lightDir[0] = L.attenuation[0] + 1.5287891e-5f;  // ~2^-16 epsilon
             lightDir[1] = L.attenuation[1];
             lightDir[2] = L.attenuation[2];
-            lightAttenuation[0] = L.attenuation[3];
+            lightAttentuation[0] = L.attenuation[3];
 
-            cosHalfFovInner = L.dir[0];
-            spotShadowFade = L.dir[1];
-            lightRadius = L.dir[2];
+            lightCosHalfFovInner = L.dir[0];
+            spotShadowFade       = L.dir[1];
+            lightRadius          = L.dir[2];
 
-            cutOn = L.cosHalfFovInner;
+            cutOn  = L.cosHalfFovInner;
             cutOff = L.cosHalfFovOuter;
-            lightExponent = L.exponent;
+            // IDA also writes `nearEdge = L.exponent;` here; dead — never read.
 
-            memcpy(falloffParams, L.falloff, sizeof(falloffParams));
+            falloffParams[0] = L.falloff[0];
+            falloffParams[1] = L.falloff[1];
+            falloffParams[2] = L.falloff[2];
+            falloffParams[3] = L.falloff[3];
+
             memcpy(viewMatrix, L.viewMatrix.m, sizeof(viewMatrix));
             memcpy(projMatrix, L.projMatrix.m, sizeof(projMatrix));
 
-            // Find matching shadow
+            // Find a matching shadow record for this spot.
             for (unsigned j = 0; j < frontEndDataOut->shadowableLightCount; ++j)
             {
                 const auto &S = frontEndDataOut->shadowableLights[j];
-                if (S.type == GFX_LIGHT_TYPE_SPOT &&
-                    S.spotShadowIndex != -1 &&
-                    S.def == lightDef &&
-                    !memcmp(S.origin, L.origin, sizeof(float) * 3))
+                if (S.type == GFX_LIGHT_TYPE_SPOT
+                    && S.spotShadowIndex != -1
+                    && L.def == S.def
+                    && L.origin[0] == S.origin[0]
+                    && L.origin[1] == S.origin[1]
+                    && L.origin[2] == S.origin[2])
                 {
-                    spotShadow = &frontEndDataOut->spotShadows[S.spotShadowIndex];
+                    spotShadow   = &frontEndDataOut->spotShadows[S.spotShadowIndex];
                     lightExponent = *(int *)&spotShadow->fade;
                     break;
                 }
             }
 
-            float specScale = r_specularColorScale->current.value;
-            specularColor[0] = L.diffuseColor[0] * diffuseScale;
-            specularColor[1] = L.diffuseColor[1] * diffuseScale;
-            specularColor[2] = L.diffuseColor[2] * diffuseScale;
+            // IDA's `specularColor` array actually holds *scaled diffuse*.
+            const float diffuseScale = r_diffuseColorScale->current.value;
+            specularColor[0] = diffuseScale * L.diffuseColor[0];
+            specularColor[1] = diffuseScale * L.diffuseColor[1];
+            specularColor[2] = diffuseScale * L.diffuseColor[2];
 
+            // Scaled specular spread across lightOrigin[2..3] + v60.
+            const float specScale = r_specularColorScale->current.value;
             lightOrigin[2] = specScale * L.specularColor[0];
             lightOrigin[3] = specScale * L.specularColor[1];
+            v60            = specScale * L.specularColor[2];
         }
     }
 
-    // ---- Upload constants ----
-    R_SetInputCodeConstant(input, 0x8B, ys[1], ys[2], ys[3], 0);
-    R_SetInputCodeConstant(input, 0x8C, zs[1], zs[2], zs[3], 0);
-    R_SetInputCodeConstant(input, 0x8D, falloffs[1], falloffs[2], falloffs[3], 0);
-    R_SetInputCodeConstant(input, 0x8E, reds[1], reds[2], reds[3], 0);
-    R_SetInputCodeConstant(input, 0x8F, greens[1], greens[2], greens[3], 0);
-    R_SetInputCodeConstant(input, 0x90, blues[1], blues[2], blues[3], 0);
-    R_SetInputCodeConstant(input, 0x91,
-        diffusePacked[1], diffusePacked[2], diffusePacked[3],
-        lightDef ? *(float *)&lightDef : 0.0f);
+    // ===== Upload GLIGHT_POSXS..BLUES (slots 0x8B-0x91) =====
+    // W of each slot pulls the previous attribute's [0] — always 0.
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_GLIGHT_POSXS,    ys[1],       ys[2],       ys[3],       xs[0]);
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_GLIGHT_POSYS,    zs[1],       zs[2],       zs[3],       ys[0]);
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_GLIGHT_POSZS,    falloffs[1], falloffs[2], falloffs[3], zs[0]);
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_GLIGHT_FALLOFFS, reds[1],     reds[2],     reds[3],     falloffs[0]);
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_GLIGHT_REDS,     greens[1],   greens[2],   greens[3],   reds[0]);
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_GLIGHT_GREENS,   blues[1],    blues[2],    blues[3],    greens[0]);
+    // diffuseColor[3] is the slot IDA names `*(float*)&lightDef` (the omni loop OOB-writes here).
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_GLIGHT_BLUES,
+                           diffuseColor[1], diffuseColor[2], diffuseColor[3], blues[0]);
 
-    // ---- Spot shadow handling ----
-    if (spotShadow)
+    // ===== Bind spot attenuation image (codeImages[17]) =====
+    if (*(uint32_t *)&diffuseColor[0])
     {
-        input->codeImages[7] = spotShadow->image;
-        R_SetInputCodeImageSamplerState(input, 7, 0x62);
-        R_SetInputCodeConstantFromVec4(input, 0x47, (float*)spotShadow->pixelAdjust);
+        const GfxLightDef *spotDef = *(const GfxLightDef **)&diffuseColor[0];
+        input->codeImages[TEXTURE_SRC_CODE_DLIGHT_ATTENUATION] = spotDef->attenuation.image;
+        R_SetInputCodeImageSamplerState(input, 0x11u, spotDef->attenuation.samplerState);
     }
     else
     {
-        input->codeImages[7] = rgp.whiteImage;
-        R_SetInputCodeImageSamplerState(input, 7, 0x62);
+        input->codeImages[TEXTURE_SRC_CODE_DLIGHT_ATTENUATION] = rgp.whiteImage;
+        R_SetInputCodeImageSamplerState(input, 0x11u, 0x61u);
     }
 
-    // Remaining matrix + attenuation uploads preserved exactly�
+    // ===== DLIGHT_SHADOW_LOOKUP_MATRIX_0..3 (slots 0x9D-0xA0) + DLIGHT_SPOT_SHADOWMAP_PIXEL_ADJUST (0x47) =====
+    // Build the eye origin (W=1). The viewParms.origin[3] sentinel decides whether xyz
+    // is the actual eye position or zeroed (e.g., for shadow-camera projections).
+    float eyeOrigin[4];
+    if (viewInfo->cullViewInfo.viewParms.origin[3] == 0.0f)
+    {
+        eyeOrigin[0] = 0.0f;
+        eyeOrigin[1] = 0.0f;
+        eyeOrigin[2] = 0.0f;
+    }
+    else
+    {
+        // IDA pulls XY from viewInfo->viewParms.origin but Z from cullViewInfo.viewParms.origin.
+        eyeOrigin[0] = viewInfo->viewParms.origin[0];
+        eyeOrigin[1] = viewInfo->viewParms.origin[1];
+        eyeOrigin[2] = viewInfo->cullViewInfo.viewParms.origin[2];
+    }
+    eyeOrigin[3] = 1.0f;
+
+    if (spotShadow)
+    {
+        float lookupMatrix[4][4];
+        memcpy(lookupMatrix, &spotShadow->lookupMatrix, sizeof(lookupMatrix));
+
+        // The 4th row of lookupMatrix is replaced by (eyeOrigin * lookupMatrix), so the
+        // shader gets the world eye position pre-transformed into shadow space.
+        float transformedEye[4];
+        MatrixTransformVector44(eyeOrigin, (const float (*)[4])lookupMatrix, transformedEye);
+
+        R_SetInputCodeConstantFromVec4(input, CONST_SRC_CODE_DLIGHT_SHADOW_LOOKUP_MATRIX_0, lookupMatrix[0]);
+        R_SetInputCodeConstantFromVec4(input, CONST_SRC_CODE_DLIGHT_SHADOW_LOOKUP_MATRIX_1, lookupMatrix[1]);
+        R_SetInputCodeConstantFromVec4(input, CONST_SRC_CODE_DLIGHT_SHADOW_LOOKUP_MATRIX_2, lookupMatrix[2]);
+        R_SetInputCodeConstantFromVec4(input, CONST_SRC_CODE_DLIGHT_SHADOW_LOOKUP_MATRIX_3, transformedEye);
+
+        input->codeImages[TEXTURE_SRC_CODE_SHADOWMAP_SPOT] = spotShadow->image;
+        R_SetInputCodeImageSamplerState(input, 7u, 0x62u);
+        R_SetInputCodeConstantFromVec4(input, CONST_SRC_CODE_DLIGHT_SPOT_SHADOWMAP_PIXEL_ADJUST,
+                                       spotShadow->pixelAdjust);
+    }
+    else
+    {
+        input->codeImages[TEXTURE_SRC_CODE_SHADOWMAP_SPOT] = rgp.whiteImage;
+        R_SetInputCodeImageSamplerState(input, 7u, 0x62u);
+    }
+
+    // ===== DLIGHT_ATTENUATION (slot 0x95) — actually the spot direction =====
+    R_SetInputCodeConstantFromVec4(input, CONST_SRC_CODE_DLIGHT_ATTENUATION, lightDir);
+
+    // ===== DLIGHT_FALLOFF (slot 0x96) — outer/inner slope+bias =====
+    // Outer edge spans falloff[0] -> falloff[2]; inner edge spans falloff[3] -> falloff[1].
+    float outerSlope, outerBias, innerSlope, innerBias;
+    if (falloffParams[0] == falloffParams[2]) {
+        outerSlope = 1.0f;
+        outerBias  = -falloffParams[0];
+    } else {
+        outerSlope = 1.0f / (falloffParams[2] - falloffParams[0]);
+        outerBias  = -falloffParams[0] * outerSlope;
+    }
+    if (falloffParams[3] == falloffParams[1]) {
+        innerSlope = 1.0f;
+        innerBias  = -falloffParams[3];
+    } else {
+        innerSlope = 1.0f / (falloffParams[1] - falloffParams[3]);
+        innerBias  = -falloffParams[3] * innerSlope;
+    }
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_DLIGHT_FALLOFF,
+                           outerSlope, innerSlope, outerBias, innerBias);
+
+    // ===== DLIGHT_SPOT_MATRIX_0..3 (slots 0x97-0x9A) — spot view*proj =====
+    // 1. Transform light position through the spot's view matrix; the result replaces the
+    //    view matrix's translation row (row 3).
+    MatrixTransformVector44(&lightAttentuation[1],
+                            (const float (*)[4])viewMatrix,
+                            viewMatrix[3]);
+    // 2. Negate the xyz of that translation row (leave w alone).
+    viewMatrix[3][0] = -viewMatrix[3][0];
+    viewMatrix[3][1] = -viewMatrix[3][1];
+    viewMatrix[3][2] = -viewMatrix[3][2];
+    // 3. Compose final = viewMatrix * projMatrix.
+    float finalMatrix[4][4];
+    MatrixMultiply44((const float (*)[4])viewMatrix,
+                     (const float (*)[4])projMatrix,
+                     finalMatrix);
+    // 4. Upload transposed — each slot gets one column of the row-major finalMatrix.
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_DLIGHT_SPOT_MATRIX_0,
+                           finalMatrix[0][0], finalMatrix[1][0], finalMatrix[2][0], finalMatrix[3][0]);
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_DLIGHT_SPOT_MATRIX_1,
+                           finalMatrix[0][1], finalMatrix[1][1], finalMatrix[2][1], finalMatrix[3][1]);
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_DLIGHT_SPOT_MATRIX_2,
+                           finalMatrix[0][2], finalMatrix[1][2], finalMatrix[2][2], finalMatrix[3][2]);
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_DLIGHT_SPOT_MATRIX_3,
+                           finalMatrix[0][3], finalMatrix[1][3], finalMatrix[2][3], finalMatrix[3][3]);
+
+    // ===== DLIGHT_POSITION (slot 0x92) — xyz = pos rel view, w = 1/r^2 =====
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_DLIGHT_POSITION,
+        lightAttentuation[1], lightAttentuation[2], lightAttentuation[3],
+        1.0f / (lightCosHalfFovOuter * lightCosHalfFovOuter));
+
+    // ===== DLIGHT_DIFFUSE (slot 0x93) — specularColor[] really holds scaled diffuse =====
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_DLIGHT_DIFFUSE,
+                           specularColor[0], specularColor[1], specularColor[2], 1.0f);
+
+    // ===== DLIGHT_SPECULAR (slot 0x94) =====
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_DLIGHT_SPECULAR,
+                           lightOrigin[2], lightOrigin[3], v60, 1.0f);
+
+    // ===== DLIGHT_SPOT_DIR (slot 0x9B) — = L.dir[0..2] =====
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_DLIGHT_SPOT_DIR,
+                           lightCosHalfFovInner, spotShadowFade, lightRadius, 0.0f);
+
+    // ===== DLIGHT_SPOT_FACTORS (slot 0x9C) — cone dot scale/bias, w = shadow fade bits =====
+    const float spotDotScale = 1.0f / (cutOn - cutOff);
+    const float spotDotBias  = -cutOff * spotDotScale;
+    R_SetInputCodeConstant(input, CONST_SRC_CODE_DLIGHT_SPOT_FACTORS,
+                           spotDotScale, spotDotBias, 0.0f, *(float *)&lightExponent);
 }
 
 

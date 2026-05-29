@@ -3589,6 +3589,11 @@ void __cdecl Vec3AddScalar(const float *a, float s, float *sum)
     sum[2] = a[2] + s;
 }
 
+bool __cdecl Vec3Compare(const float *a, const float *b)
+{
+    return *a == *b && a[1] == b[1] && a[2] == b[2];
+}
+
 void __cdecl Vec3Add(const float *a, const float *b, float *sum)
 {
     sum[0] = a[0] + b[0];

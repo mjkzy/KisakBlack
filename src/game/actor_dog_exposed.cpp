@@ -326,7 +326,6 @@ int __cdecl Actor_Dog_IsEnemyInAttackRange(actor_s *self, sentient_s *enemy, int
     float *currentOrigin; // eax
     col_context_t context; // [esp+24h] [ebp-A4h] BYREF
     float mins[3]; // [esp+4Ch] [ebp-7Ch] BYREF
-    trace_t trace; // [esp+58h] [ebp-70h] BYREF
     float enemyToMe[2]; // [esp+94h] [ebp-34h] BYREF
     float cos45; // [esp+9Ch] [ebp-2Ch]
     float enemyToAttackSpot[2]; // [esp+A0h] [ebp-28h] BYREF
@@ -382,7 +381,7 @@ int __cdecl Actor_Dog_IsEnemyInAttackRange(actor_s *self, sentient_s *enemy, int
     }
     else if ( enemyInAttackRange )
     {
-        memset(&trace, 0, 16);
+        trace_t trace; // [esp+58h] [ebp-70h] BYREF
         mins[0] = actorMins[0];
         mins[1] = -15.0;
         mins[2] = 18.0f;
@@ -448,7 +447,6 @@ char __fastcall Actor_SetMeleeAttackSpot(actor_s *self, const float *enemyPositi
     {
         __debugbreak();
     }
-    memset(&trace, 0, 16);
     bestFraction = 0.0f;
     enemy = Actor_GetTargetSentient(self);
     currentOrigin = self->ent->r.currentOrigin;

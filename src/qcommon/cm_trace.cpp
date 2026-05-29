@@ -3096,7 +3096,6 @@ int __cdecl CM_BoxSightTrace(
     int oldHitNuma; // [esp+194h] [ebp+8h]
 
     //traceWork_t::traceWork_t(&tw);
-    memset(&trace, 0, 16);
     if ( !cm.numNodes
         && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\qcommon\\cm_trace.cpp", 2687, 0, "%s", "cm.numNodes") )
     {
@@ -3478,7 +3477,6 @@ int __cdecl CM_SightTracePoint(int oldHitNum, const float *start, const float *e
 
     //traceWork_t::traceWork_t(&tw);
     hitNum = 0;
-    memset(&trace, 0, 16);
     brushmask = context->mask;
     *(_QWORD *)tw.extents.start.vec.v = *(_QWORD *)start;
     tw.extents.start.vec.v[2] = start[2];

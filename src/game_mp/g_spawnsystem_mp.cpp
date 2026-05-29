@@ -807,7 +807,6 @@ void __cdecl SpawnSystem_CalculateCylinderLength(SpawnInfluencer *influencer)
     float originalLength; // [esp+4h] [ebp-88h]
     float end[3]; // [esp+Ch] [ebp-80h] BYREF
     float fraction; // [esp+18h] [ebp-74h]
-    trace_t trace; // [esp+1Ch] [ebp-70h] BYREF
     gentity_s *player; // [esp+58h] [ebp-34h]
     float speedIPS; // [esp+5Ch] [ebp-30h]
     gentity_s *ent; // [esp+60h] [ebp-2Ch]
@@ -870,7 +869,7 @@ void __cdecl SpawnSystem_CalculateCylinderLength(SpawnInfluencer *influencer)
             {
                 __debugbreak();
             }
-            memset(&trace, 0, 16);
+            trace_t trace; // [esp+1Ch] [ebp-70h] BYREF
             originalLength = influencer->preset->originalLength;
             end[0] = (float)(originalLength * influencer->up[0]) + influencer->origin[0];
             end[1] = (float)(originalLength * influencer->up[1]) + influencer->origin[1];
@@ -1988,7 +1987,6 @@ void __cdecl SpawnSystem_DebugRenderVisibilityCheck(
                 gentity_s *ignore_entity,
                 bool collision_test)
 {
-    trace_t trace; // [esp+10h] [ebp-80h] BYREF
     col_context_t context; // [esp+4Ch] [ebp-44h] BYREF
     float end[3]; // [esp+74h] [ebp-1Ch] BYREF
     float start[3]; // [esp+80h] [ebp-10h] BYREF
@@ -2008,7 +2006,7 @@ void __cdecl SpawnSystem_DebugRenderVisibilityCheck(
     end[2] = end[2] + height_offset;
     if ( collision_test )
     {
-        memset(&trace, 0, 16);
+        trace_t trace; // [esp+10h] [ebp-80h] BYREF
         if ( ignore_entity )
             G_TraceCapsule(&trace, start, vec3_origin, vec3_origin, end, ignore_entity->s.number, 0x806833, &context);
         else

@@ -12,6 +12,7 @@
 #include <win32/win_shared.h>
 #include <win32/win_net.h>
 #include "rb_state.h"
+#include "r_material_load_obj.h"
 
 struct CinematicGlob // sizeof=0x980
 {                                       // XREF: .data:cinematicGlob/r
@@ -1382,50 +1383,16 @@ void __cdecl R_Cinematic_BlackRendererImages()
         RB_Resource_Callback(RB_UnbindAllImages);
         RB_Resource_Flush();
     }
-    gfxCmdBufInput.codeImages[23] = rgp.blackImage;
-    gfxCmdBufInput.codeImages[24] = rgp.grayImage;
-    gfxCmdBufInput.codeImages[25] = rgp.grayImage;
-    gfxCmdBufInput.codeImages[26] = rgp.blackImage;
-    if (!rgp.grayImage
-        && !Assert_MyHandler(
-            "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_cinematic.cpp",
-            1297,
-            0,
-            "%s",
-            "gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_CR]"))
-    {
-        __debugbreak();
-    }
-    if (!gfxCmdBufInput.codeImages[25]
-        && !Assert_MyHandler(
-            "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_cinematic.cpp",
-            1298,
-            0,
-            "%s",
-            "gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_CB]"))
-    {
-        __debugbreak();
-    }
-    if (!gfxCmdBufInput.codeImages[26]
-        && !Assert_MyHandler(
-            "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_cinematic.cpp",
-            1299,
-            0,
-            "%s",
-            "gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_A]"))
-    {
-        __debugbreak();
-    }
-    if (!gfxCmdBufInput.codeImages[23]
-        && !Assert_MyHandler(
-            "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_cinematic.cpp",
-            1300,
-            0,
-            "%s",
-            "gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_Y]"))
-    {
-        __debugbreak();
-    }
+
+    gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_Y] = rgp.blackImage;
+    gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_CR] = rgp.grayImage;
+    gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_CB] = rgp.grayImage;
+    gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_A] = rgp.blackImage;
+
+    iassert(gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_CR]);
+    iassert(gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_CB]);
+    iassert(gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_A]);
+    iassert(gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_Y]);
 }
 
 void *__stdcall R_Cinematic_Bink_Alloc(unsigned int bytes)
@@ -1623,13 +1590,15 @@ void __cdecl R_Cinematic_SetRendererImagesToFrame(int frameToSetTo)
         RB_Resource_Callback(RB_UnbindAllImages);
         RB_Resource_Flush();
     }
-    gfxCmdBufInput.codeImages[23] = &textureSet->drawImageY;
-    gfxCmdBufInput.codeImages[24] = &textureSet->drawImageCr;
-    gfxCmdBufInput.codeImages[25] = &textureSet->drawImageCb;
+
+    gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_Y] = &textureSet->drawImageY;
+    gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_CR] = &textureSet->drawImageCr;
+    gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_CB] = &textureSet->drawImageCb;
+
     if (textureSet->drawImageA.texture.basemap)
-        gfxCmdBufInput.codeImages[26] = &textureSet->drawImageA;
+        gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_A] = &textureSet->drawImageA;
     else
-        gfxCmdBufInput.codeImages[26] = rgp.whiteImage;
+        gfxCmdBufInput.codeImages[TEXTURE_SRC_CODE_CINEMATIC_A] = rgp.whiteImage;
 }
 
 char __cdecl R_Cinematic_GetFilenameAndTimeInMsec(char *outName, int outNameSize, unsigned int *outTimeInMsec)

@@ -1091,7 +1091,6 @@ void __cdecl Bot_GetStrafeInput(const client_t *bot, bot_info_t *botInfo, usercm
     ps = (const playerState_s *)G_GetPlayerState(bot->gentity->s.number);
     if ( (botInfo->flags & 0x40) != 0 )
     {
-        memset(&trace, 0, 16);
         gentity = bot->gentity;
         vStart[0] = gentity->r.currentOrigin[0];
         vStart[1] = gentity->r.currentOrigin[1];
@@ -1350,7 +1349,6 @@ char __cdecl Bot_PathValid(const gentity_s *bot, const path_t *path)
     float vStart[3]; // [esp+C8h] [ebp-Ch] BYREF
 
     //PIXBeginNamedEvent(-1, "Bot_PathValid");
-    memset(&trace, 0, 16);
     if ( Path_Exists(path) )
     {
         if ( Path_HasNegotiationNode(path) )

@@ -562,10 +562,7 @@ void __cdecl R_SetSunShadowConstants(GfxCmdBufInput *input, const GfxSunShadowPr
 // local variable allocation has failed, the output may be wrong!
 void    R_SetHeroLighting(GfxCmdBufInput *input, GfxViewInfo *viewInfo);
 void __cdecl R_SetDLightsConstantsDefaults(GfxCmdBufInput *input);
-void __cdecl R_SetInputCodeImageSamplerState(
-                GfxCmdBufInput *input,
-                unsigned int codeTexture,
-                unsigned __int8 samplerState);
+
 // local variable allocation has failed, the output may be wrong!
 void    R_SetDLightsConstants(
                 GfxCmdBufInput *input,

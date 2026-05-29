@@ -414,21 +414,9 @@ void __fastcall Actor_FaceEnemy(actor_s *self, ai_orient_t *pOrient)
     sentient_s *enemy; // [esp+20h] [ebp-14h]
     float v[3]; // [esp+28h] [ebp-Ch] BYREF
 
-    if ( !self
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\actor_orientation.cpp", 564, 0, "%s", "self") )
-    {
-        __debugbreak();
-    }
-    if ( !self->sentient
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\game\\actor_orientation.cpp",
-                    565,
-                    0,
-                    "%s",
-                    "self->sentient") )
-    {
-        __debugbreak();
-    }
+    iassert(self);
+    iassert(self->sentient);
+
     if ( Actor_GetTargetEntity(self) )
     {
         enemy = Actor_GetTargetSentient(self);
@@ -573,16 +561,9 @@ void __fastcall Actor_FaceEnemyOrMotion(actor_s *self, ai_orient_t *pOrient)
     float vEnemyDir[3]; // [esp+28h] [ebp-18h] BYREF
     float vEnemyPos[3]; // [esp+34h] [ebp-Ch] BYREF
 
-    if ( !self
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\actor_orientation.cpp", 673, 0, "%s", "self") )
-    {
-        __debugbreak();
-    }
-    if ( !pOrient
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\actor_orientation.cpp", 674, 0, "%s", "pOrient") )
-    {
-        __debugbreak();
-    }
+    iassert(self);
+    iassert(pOrient);
+
     if ( !Actor_HasPath(self) || self->Physics.vVelocity[0] == 0.0 && self->Physics.vVelocity[1] == 0.0 )
     {
         Actor_FaceEnemy(self, pOrient);

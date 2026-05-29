@@ -2010,14 +2010,9 @@ void R_UpdateFrontEndDvarOptions()
     if (rg.distortion != v2)
         R_SyncRenderThread();
     rg.distortion = v2;
-    image = gfxRenderTargets[R_RENDERTARGET_RESOLVED_POST_SUN].image;
 
-    if (!&gfxCmdBufInput
-        && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h", 1850, 0, "%s", "input"))
-    {
-        __debugbreak();
-    }
-    gfxCmdBufInput.codeImages[9] = image;
+    R_SetInputCodeImage(&gfxCmdBufInput, TEXTURE_SRC_CODE_RESOLVED_POST_SUN, gfxRenderTargets[R_RENDERTARGET_RESOLVED_POST_SUN].image);
+
     rg.drawWorld = r_drawWorld->current.enabled;
     rg.drawBModels = r_drawBModels->current.enabled;
     rg.drawSModels = r_drawSModels->current.enabled;

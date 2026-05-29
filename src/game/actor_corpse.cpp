@@ -342,7 +342,6 @@ double __cdecl Actor_SetBodyPlantAngle(
     float vDelta[3]; // [esp+C4h] [ebp-18h] BYREF
     float vMaxs[3]; // [esp+D0h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     fStartUp = 30.0f;
     fEndDown = 30.0f;
     fSize = 4.0999999f;

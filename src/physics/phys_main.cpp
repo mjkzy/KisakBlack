@@ -2191,7 +2191,6 @@ void __cdecl Phys_FindAndRenderBulletMesh(const float *start, const float *end)
 
     results.staticModel = 0;
     bHitDynEnt = 0;
-    memset(&resultsDyn, 0, 16);
     //TraceExtents::TraceExtents(&clip.extents);
     memset((unsigned __int8 *)&resultsDyn, 0, sizeof(resultsDyn));
     resultsDyn.fraction = 1.0f;
@@ -3353,7 +3352,6 @@ void collide_vehicle_wheels(PhysObjUserData *userData)
     int v22; // [esp+CCh] [ebp-4D8h] BYREF
     int m_entnum; // [esp+D8h] [ebp-4CCh]
     col_context_t v24; // [esp+DCh] [ebp-4C8h] BYREF
-    trace_t traceResults; // [esp+104h] [ebp-4A0h] BYREF
     float zero[3]; // [esp+13Ch] [ebp-468h] BYREF
     float p1[3]; // [esp+148h] [ebp-45Ch] BYREF
     float p0[4]; // [esp+154h] [ebp-450h] BYREF
@@ -3408,7 +3406,8 @@ void collide_vehicle_wheels(PhysObjUserData *userData)
                 Phys_NitrousVecToVec3(&v30, p0);
                 Phys_NitrousVecToVec3(&v31, p1);
                 Phys_NitrousVecToVec3(&phys_zerovec, zero);
-                memset(&traceResults, 0, 16);
+
+                trace_t traceResults; // [esp+104h] [ebp-4A0h] BYREF
                 //col_context_t::col_context_t(&v24);
                 m_entnum = vehicle->m_entnum;
                 CG_TraceCapsule(&traceResults, p0, zero, zero, p1, m_entnum, 529, &v24);

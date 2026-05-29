@@ -2651,7 +2651,6 @@ void __cdecl ShowEntityInfo()
     int v0; // [esp+0h] [ebp-A4h]
     int integer; // [esp+4h] [ebp-A0h]
     float vEnd[3]; // [esp+Ch] [ebp-98h] BYREF
-    trace_t trace; // [esp+18h] [ebp-8Ch] BYREF
     float vForward[3]; // [esp+54h] [ebp-50h] BYREF
     unsigned __int16 hitEntId; // [esp+60h] [ebp-44h]
     void (__cdecl *entinfo)(gentity_s *, float *); // [esp+64h] [ebp-40h]
@@ -2671,7 +2670,7 @@ void __cdecl ShowEntityInfo()
             || g_entinfo->current.integer == 5
             || g_entinfo->current.integer == 7 )
         {
-            memset(&trace, 0, 16);
+            trace_t trace; // [esp+18h] [ebp-8Ch] BYREF
             CL_GetDebugViewForward(vForward);
             vEnd[0] = (float)(16000.0 * vForward[0]) + vStart[0];
             vEnd[1] = (float)(16000.0 * vForward[1]) + vStart[1];
@@ -3328,96 +3327,22 @@ void __cdecl G_RunFrameForEntity(gentity_s *ent)
     char *v5; // eax
     const char *v6; // eax
 
-    if ( !ent->r.inuse
-        && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\g_main_mp.cpp", 3102, 0, "%s", "ent->r.inuse") )
-    {
-        __debugbreak();
-    }
+    iassert(ent->r.inuse);
+
     if ( ent->processedFrame != level.framenum )
     {
         ent->processedFrame = level.framenum;
         if ( ent->tagInfo )
         {
-            if ( !ent->tagInfo->parent
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\g_main_mp.cpp",
-                            3111,
-                            0,
-                            "%s",
-                            "ent->tagInfo->parent") )
-            {
-                __debugbreak();
-            }
+            iassert(ent->tagInfo->parent);
             G_RunFrameForEntity(ent->tagInfo->parent);
         }
-        if ( (ent->r.svFlags & 6) == 6
-            && !Assert_MyHandler(
-                        "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\g_main_mp.cpp",
-                        3115,
-                        0,
-                        "%s\n\t(ent->s.number) = %i",
-                        "((ent->r.svFlags & ((1<<1) | (1<<2))) != ((1<<1) | (1<<2)))",
-                        ent->s.number) )
-        {
-            __debugbreak();
-        }
-        if ( ent->r.maxs[0] < ent->r.mins[0] )
-        {
-            v1 = SL_ConvertToString(ent->classname, SCRIPTINSTANCE_SERVER);
-            v2 = va(
-                         "entnum: %d, origin: %g %g %g, classname: %s",
-                         ent->s.number,
-                         ent->r.currentOrigin[0],
-                         ent->r.currentOrigin[1],
-                         ent->r.currentOrigin[2],
-                         v1);
-            if ( !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\g_main_mp.cpp",
-                            3117,
-                            0,
-                            "%s\n\t%s",
-                            "ent->r.maxs[0] >= ent->r.mins[0]",
-                            v2) )
-                __debugbreak();
-        }
-        if ( ent->r.maxs[1] < ent->r.mins[1] )
-        {
-            v3 = SL_ConvertToString(ent->classname, SCRIPTINSTANCE_SERVER);
-            v4 = va(
-                         "entnum: %d, origin: %g %g %g, classname: %s",
-                         ent->s.number,
-                         ent->r.currentOrigin[0],
-                         ent->r.currentOrigin[1],
-                         ent->r.currentOrigin[2],
-                         v3);
-            if ( !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\g_main_mp.cpp",
-                            3118,
-                            0,
-                            "%s\n\t%s",
-                            "ent->r.maxs[1] >= ent->r.mins[1]",
-                            v4) )
-                __debugbreak();
-        }
-        if ( ent->r.maxs[2] < ent->r.mins[2] )
-        {
-            v5 = SL_ConvertToString(ent->classname, SCRIPTINSTANCE_SERVER);
-            v6 = va(
-                         "entnum: %d, origin: %g %g %g, classname: %s",
-                         ent->s.number,
-                         ent->r.currentOrigin[0],
-                         ent->r.currentOrigin[1],
-                         ent->r.currentOrigin[2],
-                         v5);
-            if ( !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\g_main_mp.cpp",
-                            3119,
-                            0,
-                            "%s\n\t%s",
-                            "ent->r.maxs[2] >= ent->r.mins[2]",
-                            v6) )
-                __debugbreak();
-        }
+
+        iassert(((ent->r.svFlags & ((1 << 1) | (1 << 2))) != ((1 << 1) | (1 << 2))));
+        iassert(ent->r.maxs[0] >= ent->r.mins[0]);
+        iassert(ent->r.maxs[1] >= ent->r.mins[1]);
+        iassert(ent->r.maxs[2] >= ent->r.mins[2]);
+
         if ( ent->s.loopSoundId )
         {
             if ( ent->s.loopSoundFade < 0 )
@@ -3432,41 +3357,18 @@ void __cdecl G_RunFrameForEntity(gentity_s *ent)
         }
         if ( ent->scr_vehicle )
         {
-            if ( (unsigned int)(ent->scr_vehicle - level.vehicles) >= 0x10
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\g_main_mp.cpp",
-                            3135,
-                            0,
-                            "%s",
-                            "(unsigned)( ent->scr_vehicle - level.vehicles ) < MAX_VEHICLES") )
-            {
-                __debugbreak();
-            }
-            if ( ent->scr_vehicle->entNum == 1023
-                && !Assert_MyHandler(
-                            "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\g_main_mp.cpp",
-                            3136,
-                            0,
-                            "%s",
-                            "ent->scr_vehicle->entNum != ENTITYNUM_NONE") )
-            {
-                __debugbreak();
-            }
+            iassert((unsigned)(ent->scr_vehicle - level.vehicles) < MAX_VEHICLES);
+            iassert(ent->scr_vehicle->entNum != ENTITYNUM_NONE);
         }
-        else if ( ent->s.eType == 14
-                     && !Assert_MyHandler(
-                                 "C:\\projects_pc\\cod\\codsrc\\src\\game_mp\\g_main_mp.cpp",
-                                 3140,
-                                 0,
-                                 "%s",
-                                 "ent->s.eType != ET_VEHICLE") )
+        else
         {
-            __debugbreak();
+            iassert(ent->s.eType != ET_VEHICLE);
         }
+
         if ( !ent->client
-            && ent->s.eType != 14
-            && ent->s.eType != 12
-            && ent->s.eType != 2
+            && ent->s.eType != ET_VEHICLE
+            && ent->s.eType != ET_HELICOPTER
+            && ent->s.eType != ET_PLAYER_CORPSE
             && (ent->s.lerp.eFlags & 0x4000) != 0
             && level.time > ent->s.time2 )
         {
@@ -3491,12 +3393,12 @@ void __cdecl G_RunFrameForEntity(gentity_s *ent)
         {
             switch ( ent->s.eType )
             {
-                case 4:
+                case ET_MISSILE:
                     G_RunMissile(ent);
                     if ( ent->tagInfo )
                         G_GeneralLink(ent);
                     return;
-                case 3:
+                case ET_ITEM:
                     if ( ent->tagInfo )
                     {
                         G_GeneralLink(ent);
@@ -3506,10 +3408,10 @@ void __cdecl G_RunFrameForEntity(gentity_s *ent)
 LABEL_63:
                     G_RunItem(ent);
                     return;
-                case 2:
+                case ET_PLAYER_CORPSE:
                     G_RunCorpse(ent);
                     return;
-                case 0x13:
+                case ET_ACTOR_CORPSE:
                     G_RunThink(ent);
                     return;
             }

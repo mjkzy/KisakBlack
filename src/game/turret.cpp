@@ -247,7 +247,6 @@ void __cdecl G_PlayerTurretPositionAndBlend(gentity_s *ent, gentity_s *pTurretEn
     float turretAxis[4][3]; // [esp+230h] [ebp-3Ch] BYREF
     float vDelta[3]; // [esp+260h] [ebp-Ch]
 
-    memset(&trace, 0, 16);
     //col_context_t::col_context_t(&context);
     clientNum = ent->s.clientNum;
     if ( (unsigned int)clientNum >= 0x20
@@ -1147,7 +1146,6 @@ void __cdecl turret_RestoreDefaultDropPitch(gentity_s *self)
 
     numSteps = 30;
     pTurretInfo = self->pTurretInfo;
-    memset(&trace, 0, 16);
     if ( !pTurretInfo
         && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\turret.cpp", 2375, 0, "%s", "pTurretInfo") )
     {
@@ -2262,7 +2260,6 @@ void __cdecl turret_find_max_angles(gentity_s *pOwner, gentity_s *pTurret)
     float color[4]; // [esp+154h] [ebp-1Ch] BYREF
     float toPlayer[3]; // [esp+164h] [ebp-Ch] BYREF
 
-    memset(&tr, 0, 16);
     stepCount = 3.0f;
     dropTraceWidth = 0.25f;
     heightTestDist = 4.0f;

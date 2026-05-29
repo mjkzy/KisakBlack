@@ -5,6 +5,8 @@
 #include <physics/phys_colgeom.h>
 #include <game/teams.h>
 
+#define MAX_VEHICLES 16
+
 enum pmoveVehAnimState_t : __int32
 {                                                                             // XREF: pmove_t/r
                                                                                 // ?G_VehicleFinishedAnimating@@YAXPAUgentity_s@@W4pmoveVehAnimState_t@@@Z/r

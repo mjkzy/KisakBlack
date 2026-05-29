@@ -65,6 +65,11 @@ static ID_INLINE int BigLong(int l) { return LongSwap(l); }
 
 #define MAX_LOCAL_CENTITIES 0x600
 
+#define	MAX_GENTITIES		(1024) // 0x400
+
+#define ENTITYNUM_WORLD (MAX_GENTITIES - 2)
+#define ENTITYNUM_NONE (MAX_GENTITIES - 1)
+
 //=============================================
 void I_strncat(char *dest, int size, const char *src);
 void I_strncpyz(char *dest, const char *src, int destsize);
@@ -460,8 +465,6 @@ static const float colorDkGreen[4] = { 0.0, 0.25, 0.0, 1.0 };
 
 
 
-
-#define	MAX_GENTITIES		(1024) // 0x400
 
 struct usercmd_s;
 

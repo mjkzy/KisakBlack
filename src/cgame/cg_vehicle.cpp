@@ -343,7 +343,6 @@ void    CG_Vehicle_PreControllers(
     //v187[0] = a1;
     //v187[1] = centa;
     //LODWORD(v7) = a2;
-    memset(&trace, 0, 16);
     if (!obj && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\cgame\\cg_vehicle.cpp", 339, 0, "%s", "obj"))
         __debugbreak();
     ignoreGunner = -1;

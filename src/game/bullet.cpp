@@ -351,7 +351,6 @@ void __cdecl Bullet_FireExtended(
     BulletTraceResults br; // [esp+Ch] [ebp-58h] BYREF
     const WeaponDef *weapDef; // [esp+60h] [ebp-4h]
 
-    memset(&br, 0, 16);
     if ( !bp && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\bullet.cpp", 660, 0, "%s", "bp") )
         __debugbreak();
     if ( !weapVariantDef
@@ -931,8 +930,6 @@ void __cdecl Bullet_FirePenetrate(
     bool traceHit; // [esp+1B3h] [ebp-5h]
     const WeaponDef *weapDef; // [esp+1B4h] [ebp-4h]
 
-    memset(&br, 0, 16);
-    memset(&revBr, 0, 16);
     if ( !bp && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\bullet.cpp", 735, 0, "%s", "bp") )
         __debugbreak();
     if ( !weapVariantDef

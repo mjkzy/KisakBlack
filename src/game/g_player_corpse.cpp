@@ -137,7 +137,6 @@ void __cdecl G_RunCorpseMove(gentity_s *ent)
     corpseInfo_t *corpseInfo; // [esp+190h] [ebp-4h]
     int savedregs; // [esp+194h] [ebp+0h] BYREF
 
-    memset(&tr, 0, 16);
     isRagdoll = Com_IsRagdollTrajectory(&ent->s.lerp.pos);
     //col_context_t::col_context_t(&context);
     if ( ent->s.eType != 2

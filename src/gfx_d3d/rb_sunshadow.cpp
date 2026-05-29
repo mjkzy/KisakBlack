@@ -93,7 +93,7 @@ void __cdecl RB_DrawSunShadowOverlay()
     h = (double)vidConfig.displayHeight * 0.5;
     w = h;
     RB_SetSunShadowOverlayScaleAndBias();
-    gfxCmdBufSourceState.input.codeImageSamplerStates[8] = 97;
+    gfxCmdBufSourceState.input.codeImageSamplerStates[TEXTURE_SRC_CODE_FEEDBACK] = 97;
     R_SetCodeImageTexture(&gfxCmdBufSourceState, 8u, gfxRenderTargets[R_RENDERTARGET_SHADOWMAP_SUN].image);
     for (partitionIndex = 0; partitionIndex < 2; ++partitionIndex)
         RB_DrawStretchPic(
@@ -109,7 +109,7 @@ void __cdecl RB_DrawSunShadowOverlay()
             0xFFFFFFFF,
             GFX_PRIM_STATS_HUD);
     RB_EndTessSurface();
-    gfxCmdBufSourceState.input.codeImageSamplerStates[8] = 98;
+    gfxCmdBufSourceState.input.codeImageSamplerStates[TEXTURE_SRC_CODE_FEEDBACK] = 98;
     shadowSampleSize = sm_sunSampleSizeNear->current.value;
     pointIndexDst = 0;
     for (partitionIndex = 0; partitionIndex < 2; ++partitionIndex)

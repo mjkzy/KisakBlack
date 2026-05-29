@@ -2615,7 +2615,6 @@ char __cdecl DynEntCl_DynEntImpactEvent(
     PROF_SCOPED("DynEntCl_DynEntImpactEvent");
 
     ////TraceExtents::TraceExtents(&clip.extents);
-    memset(&trace, 0, 16);
     if ( !start
         && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\DynEntity\\DynEntity_client.cpp", 2379, 0, "%s", "start") )
     {

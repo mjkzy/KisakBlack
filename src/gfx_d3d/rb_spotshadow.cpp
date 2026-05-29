@@ -114,7 +114,7 @@ void __cdecl RB_DrawSpotShadowOverlay()
     if (backEndData->spotShadowCount)
     {
         h = (double)vidConfig.displayHeight * 0.25;
-        gfxCmdBufSourceState.input.codeImageSamplerStates[8] = 97;
+        gfxCmdBufSourceState.input.codeImageSamplerStates[TEXTURE_SRC_CODE_FEEDBACK] = 97;
         R_SetCodeImageTexture(&gfxCmdBufSourceState, 8u, gfxRenderTargets[R_RENDERTARGET_SHADOWMAP_SPOT].image);
         for (spotShadowIndex = 0; spotShadowIndex < backEndData->spotShadowCount; ++spotShadowIndex)
         {
@@ -135,7 +135,7 @@ void __cdecl RB_DrawSpotShadowOverlay()
                 GFX_PRIM_STATS_HUD);
             RB_EndTessSurface();
         }
-        gfxCmdBufSourceState.input.codeImageSamplerStates[8] = 98;
+        gfxCmdBufSourceState.input.codeImageSamplerStates[TEXTURE_SRC_CODE_FEEDBACK] = 98;
     }
 }
 

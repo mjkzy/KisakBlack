@@ -2558,7 +2558,6 @@ double __cdecl ThirdPersonViewTrace(
     float testEnd[3]; // [esp+58h] [ebp-48h] BYREF
     trace_t trace; // [esp+64h] [ebp-3Ch] BYREF
 
-    memset(&trace, 0, 16);
     ////col_context_t::col_context_t(&context);
     if ( (cgameGlob->predictedPlayerState.eFlags & 0x4000) != 0 )
         CG_TraceCapsule(
@@ -2692,7 +2691,6 @@ void __cdecl MovieCameraViewTrace(int localClientNum, int contentMask)
     float into; // [esp+1A8h] [ebp-4h]
 
     ////col_context_t::col_context_t(&context);
-    memset(&trace, 0, 16);
     numplanes = 0;
     numbumps = 4;
     traceFractionScale = 0.01667f;

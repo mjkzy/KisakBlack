@@ -674,34 +674,12 @@ const GfxImage *__cdecl R_GetTextureFromCode(
                 unsigned int codeTexture,
                 unsigned __int8 *samplerState)
 {
-    char *v4; // eax
+    bcassert(codeTexture, TEXTURE_SRC_CODE_COUNT);
+    iassert(source);
 
-    if (codeTexture >= 0x2B
-        && !Assert_MyHandler(
-            "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.cpp",
-            1330,
-            0,
-            "codeTexture doesn't index TEXTURE_SRC_CODE_COUNT\n\t%i not in [0, %i)",
-            codeTexture,
-            43))
-    {
-        __debugbreak();
-    }
-    if (!source && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.cpp", 1331, 0, "%s", "source"))
-        __debugbreak();
     *samplerState = source->input.codeImageSamplerStates[codeTexture];
-    if ((*samplerState & 7) == 0)
-    {
-        v4 = va("R_GetTextureFromCode %d, %d", codeTexture, *samplerState);
-        if (!Assert_MyHandler(
-            "C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.cpp",
-            1334,
-            0,
-            "%s\n\t%s",
-            "*samplerState & SAMPLER_FILTER_MASK",
-            v4))
-            __debugbreak();
-    }
+
+    iassert(*samplerState & SAMPLER_FILTER_MASK);
     return source->input.codeImages[codeTexture];
 }
 

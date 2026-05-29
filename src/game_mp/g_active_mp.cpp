@@ -948,7 +948,6 @@ void __cdecl G_PlayerVehiclePositionAndBlend(gentity_s *ent, gentity_s *pTurretE
     float turretAxis[4][3]; // [esp+2BCh] [ebp-3Ch] BYREF
     float vDelta[3]; // [esp+2ECh] [ebp-Ch]
 
-    memset(&trace, 0, 16);
     clientNum = ent->s.clientNum;
     if ( (unsigned int)clientNum >= 0x20
         && !Assert_MyHandler(

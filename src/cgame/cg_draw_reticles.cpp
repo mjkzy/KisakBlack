@@ -277,7 +277,6 @@ void __cdecl CG_DrawCrosshair(int localClientNum)
                                     {
                                         if ( R_StereoActivated() )
                                         {
-                                            memset(&trace, 0, 16);
                                             start[0] = cgameGlob->refdef.vieworg[0];
                                             start[1] = cgameGlob->refdef.vieworg[1];
                                             start[2] = cgameGlob->refdef.vieworg[2];
@@ -463,7 +462,6 @@ void __cdecl CG_DrawAdsOverlay(int localClientNum, int weaponIndex, const float 
             centerW = 1.0f;
             if ( R_StereoActivated() )
             {
-                memset(&trace, 0, 16);
                 start[0] = cgameGlob->refdef.vieworg[0];
                 start[1] = cgameGlob->refdef.vieworg[1];
                 start[2] = cgameGlob->refdef.vieworg[2];
@@ -919,7 +917,6 @@ void __cdecl CG_DrawVehicleCrossHair(int localClientNum)
             centerW = 1.0f;
             if ( R_StereoActivated() )
             {
-                memset(&trace, 0, 16);
                 start[0] = cgameGlob->refdef.vieworg[0];
                 start[1] = cgameGlob->refdef.vieworg[1];
                 start[2] = cgameGlob->refdef.vieworg[2];

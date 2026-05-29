@@ -839,12 +839,8 @@ void __cdecl R_SetModelLightingLookupScale(GfxCmdBufInput *input)
 
 void __cdecl R_SetupDynamicModelLighting(GfxCmdBufInput *input)
 {
-    GfxImage *image; // [esp+0h] [ebp-4h]
-
-    image = modelLightGlob.image;
-    if ( !input && !Assert_MyHandler("c:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_state.h", 1850, 0, "%s", "input") )
-        __debugbreak();
-    input->codeImages[3] = image;
+    iassert(input);
+    input->codeImages[TEXTURE_SRC_CODE_MODEL_LIGHTING] = modelLightGlob.image;
     R_SetModelLightingLookupScale(input);
 }
 

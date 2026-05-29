@@ -531,7 +531,6 @@ bool __cdecl is_not_penetrating(pmove_t *pm, float *start, float *mins, float *m
     trace_t trace; // [esp+4h] [ebp-40h] BYREF
     playerState_s *ps; // [esp+40h] [ebp-4h]
 
-    memset(&trace, 0, 16);
     ps = pm->ps;
     PM_playerTrace(pm, &trace, start, mins, maxs, end, ps->clientNum, contentMask);
     return phys_player_collision_mode->current.integer == 1 && !trace.startsolid
@@ -659,7 +658,6 @@ void __cdecl PM_FootstepEvent(pmove_t *pm, pml_t *pml, int iOldBobCycle, int iNe
         {
             if ( bFootStep && (ps->pm_flags & 8) != 0 )
             {
-                memset(&trace, 0, 16);
                 mins[0] = pm->mins[0];
                 mins[1] = pm->mins[1];
                 mins[0] = mins[0] + 6.0;
@@ -800,7 +798,6 @@ void __cdecl PM_UpdateLean(
 
     leaning = 0;
     leanofs = 0.0f;
-    memset(&trace, 0, 16);
     //col_context_t::col_context_t(&context);
     if ( ps->weaponstate != 35
         && (cmd->button_bits.testBit(6u) || cmd->button_bits.testBit(7u))
@@ -3266,7 +3263,6 @@ void __cdecl PM_GroundTrace(pmove_t *pm, pml_t *pml)
     float v2; // xmm0_4
     unsigned __int16 EntityHitId; // ax
     unsigned __int16 v4; // ax
-    trace_t airTrace; // [esp+Ch] [ebp-9Ch] BYREF
     unsigned int eventParm; // [esp+44h] [ebp-64h]
     int stype; // [esp+48h] [ebp-60h]
     float start[3]; // [esp+4Ch] [ebp-5Ch] BYREF
@@ -3276,7 +3272,6 @@ void __cdecl PM_GroundTrace(pmove_t *pm, pml_t *pml)
     const gjkcc_input_t *gjkcc_in; // [esp+A4h] [ebp-4h]
     int savedregs; // [esp+A8h] [ebp+0h] BYREF
 
-    memset(&trace, 0, 16);
     if ( !pm && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\bgame\\bg_pmove.cpp", 2548, 0, "%s", "pm") )
         __debugbreak();
     ps = pm->ps;
@@ -3420,7 +3415,7 @@ void __cdecl PM_GroundTrace(pmove_t *pm, pml_t *pml)
             else
             {
                 point[2] = point[2] - 32.0;
-                memset(&airTrace, 0, 16);
+                trace_t airTrace; // [esp+Ch] [ebp-9Ch] BYREF
                 if ( phys_player_collision_mode->current.integer == 1 )
                     PM_gjk_ground_trace(
                         gjkcc_in,
@@ -3716,7 +3711,6 @@ void __cdecl PM_GroundTraceMissed(pmove_t *pm, pml_t *pml)
     playerState_s *ps; // [esp+4Ch] [ebp-10h]
     float point[3]; // [esp+50h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     if ( !pm && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\bgame\\bg_pmove.cpp", 2485, 0, "%s", "pm") )
         __debugbreak();
     ps = pm->ps;
@@ -3829,7 +3823,6 @@ void __cdecl PM_CheckDuck(pmove_t *pm, pml_t *pml)
     trace_t trace; // [esp+1F0h] [ebp-40h] BYREF
     playerState_s *ps; // [esp+22Ch] [ebp-4h]
 
-    memset(&trace, 0, 16);
     //col_context_t::col_context_t(&context);
     if ( !pm && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\bgame\\bg_pmove.cpp", 3168, 0, "%s", "pm") )
         __debugbreak();
@@ -5076,7 +5069,6 @@ void __cdecl PM_FoliageSounds(pmove_t *pm)
     int interval; // [esp+60h] [ebp-8h]
     playerState_s *ps; // [esp+64h] [ebp-4h]
 
-    memset(&trace, 0, 16);
     ps = pm->ps;
     if ( !ps && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\bgame\\bg_pmove.cpp", 4652, 0, "%s", "ps") )
         __debugbreak();
@@ -5231,7 +5223,6 @@ void __cdecl PM_CheckLadderMove(pmove_t *pm, pml_t *pml)
     trace_t trace; // [esp+64h] [ebp-40h] BYREF
     playerState_s *ps; // [esp+A0h] [ebp-4h]
 
-    memset(&trace, 0, 16);
     if ( !pm && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\bgame\\bg_pmove.cpp", 5574, 0, "%s", "pm") )
         __debugbreak();
     ps = pm->ps;

@@ -755,4 +755,22 @@ static const MaterialUpdateFrequency s_codeConstUpdateFreq[] =
   MTL_UPDATE_RARELY
 };
 
+// name inferred - inlined
+inline void R_SetInputCodeImage(GfxCmdBufInput *input, MaterialTextureSource source, GfxImage *image)
+{
+    iassert(input);
+    input->codeImages[source] = image;
+}
+
+inline void R_SetInputCodeImageSamplerState(
+    GfxCmdBufInput *input,
+    unsigned int codeTexture,
+    unsigned __int8 samplerState)
+{
+    bcassert(codeTexture, TEXTURE_SRC_CODE_COUNT);
+    iassert(samplerState & SAMPLER_FILTER_MASK);
+
+    input->codeImageSamplerStates[codeTexture] = samplerState;
+}
+
 extern unsigned int s_decodeSamplerFilterState[24];

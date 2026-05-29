@@ -341,7 +341,6 @@ gentity_s *__cdecl Weapon_Melee_internal(gentity_s *ent, weaponParms *wp, float 
     unsigned __int16 hitEntId; // [esp+7Ch] [ebp-8h]
     gentity_s *traceEnt; // [esp+80h] [ebp-4h]
 
-    memset(&tr, 0, 16);
     if ( !wp && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\g_weapon.cpp", 251, 0, "%s", "wp") )
         __debugbreak();
     if ( !wp->weapDef
@@ -473,7 +472,6 @@ bool __cdecl Melee_Trace(
     unsigned int traceIndex; // [esp+B0h] [ebp-8h]
     unsigned __int16 hitEntId; // [esp+B4h] [ebp-4h]
 
-    memset(&traceTest, 0, 16);
     if ( !ent && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\g_weapon.cpp", 159, 0, "%s", "ent") )
         __debugbreak();
     if ( !wp && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\g_weapon.cpp", 160, 0, "%s", "wp") )
@@ -1254,7 +1252,6 @@ void __cdecl DeployWeapon(gentity_s *ent)
     float traceEnd[3]; // [esp+1D8h] [ebp-Ch] BYREF
 
     turretEnt = 0;
-    memset(&trace, 0, 16);
     traceWidth = 4.0f;
     bipodNudgeDist = bipodNudgeDistDefault;
     //col_context_t::col_context_t(&context);

@@ -1,5 +1,6 @@
 #pragma once
 #include "r_material.h"
+#include "r_material_load_obj.h"
 
 //enum GfxRenderTargetId : __int32
 enum GfxRenderTargetId : unsigned __int8
@@ -218,14 +219,10 @@ struct GfxBackEndData;
 struct __declspec(align(16)) GfxCmdBufInput // sizeof=0xE90
 {                                       // XREF: .data:GfxCmdBufInput gfxCmdBufInput/r
     float consts[197][4];
-    const GfxImage *codeImages[43];     // XREF: R_UpdateFrontEndDvarOptions+249/w
-    // R_Cinematic_BlackRendererImages+2E/w ...
-    unsigned __int8 codeImageSamplerStates[43];
-    // XREF: RB_SetBspImages(void)+6B/w
-    // RB_InitCodeImages(void)+1C/w ...
-// padding byte
-    GfxCodeImageRenderTarget codeImageRenderTargetControl[43];
-    // XREF: RB_InitCodeImages(void)+55B/w
+    const GfxImage *codeImages[TEXTURE_SRC_CODE_COUNT];     // XREF: R_UpdateFrontEndDvarOptions+249/w
+    unsigned __int8 codeImageSamplerStates[TEXTURE_SRC_CODE_COUNT];
+    // padding byte
+    GfxCodeImageRenderTarget codeImageRenderTargetControl[TEXTURE_SRC_CODE_COUNT];
     const GfxBackEndData *data;
     // padding byte
     // padding byte

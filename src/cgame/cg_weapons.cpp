@@ -1615,7 +1615,6 @@ void __cdecl BulletTrace_Start(
     bool traceHit; // [esp+57h] [ebp-1h]
 
     traceHit = 0;
-    memset(&br, 0, 16);
     FireBulletPenetrate(localClientNum, bp, weaponIndex, attacker, tracerStart, drawTracer, isPlayer, &br);
 }
 
@@ -1691,7 +1690,6 @@ void __cdecl FireBulletPenetrate(
 
     PROF_SCOPED("FireBulletPenetrate");
 
-    memset(&revBr, 0, 16);
     if ( !bp && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\cgame\\cg_weapons.cpp", 2837, 0, "%s", "bp") )
         __debugbreak();
     if ( !attacker

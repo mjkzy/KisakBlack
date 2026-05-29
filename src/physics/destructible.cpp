@@ -1814,7 +1814,6 @@ unsigned __int16 __cdecl CG_DestructibleSpawnDynEnt(
                 int mod)
 {
     col_context_t context; // [esp+1Ch] [ebp-A8h] BYREF
-    trace_t result; // [esp+44h] [ebp-80h] BYREF
     float dir[3]; // [esp+80h] [ebp-44h] BYREF
     float start[3]; // [esp+8Ch] [ebp-38h] BYREF
     float end[3]; // [esp+98h] [ebp-2Ch] BYREF
@@ -1836,7 +1835,7 @@ unsigned __int16 __cdecl CG_DestructibleSpawnDynEnt(
     {
         if ( cent->vehicle )
         {
-            memset(&result, 0, 16);
+            trace_t trace; // [esp+44h] [ebp-80h] BYREF
             start[0] = cent->pose.origin[0];
             start[1] = cent->pose.origin[1];
             start[2] = cent->pose.origin[2];
@@ -1850,7 +1849,7 @@ unsigned __int16 __cdecl CG_DestructibleSpawnDynEnt(
             end[2] = (float)(10.0 * dir[2]) + origin[2];
             //col_context_t::col_context_t(&context);
             CG_TraceCapsule(
-                &result,
+                &trace,
                 start,
                 vec3_origin,
                 vec3_origin,
@@ -1858,7 +1857,7 @@ unsigned __int16 __cdecl CG_DestructibleSpawnDynEnt(
                 cent->nextState.number,
                 0x280EC93,
                 &context);
-            if ( result.startsolid || result.fraction < 1.0 )
+            if ( trace.startsolid || trace.fraction < 1.0 )
                 return -1;
         }
     }

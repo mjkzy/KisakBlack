@@ -312,7 +312,6 @@ int __cdecl WeaponPickup_AddWeapon(
     int playerWeapIdx; // [esp+ACh] [ebp-4h]
     int savedregs; // [esp+B0h] [ebp+0h] BYREF
 
-    memset(&trace, 0, 16);
     //col_context_t::col_context_t(&context);
     if ( !ent && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\g_items.cpp", 192, 0, "%s", "ent") )
         __debugbreak();
@@ -1029,7 +1028,6 @@ gentity_s *__cdecl ThrowDownWeapon(
     float *currentOrigin; // [esp+8h] [ebp-C8h]
     float *trBase; // [esp+Ch] [ebp-C4h]
     col_context_t context; // [esp+24h] [ebp-ACh] BYREF
-    trace_t trace; // [esp+4Ch] [ebp-84h] BYREF
     float vCenter[3]; // [esp+88h] [ebp-48h] BYREF
     float tagMat[4][3]; // [esp+94h] [ebp-3Ch] BYREF
     unsigned int altWeapIdx; // [esp+C4h] [ebp-Ch]
@@ -1077,7 +1075,7 @@ gentity_s *__cdecl ThrowDownWeapon(
         {
             if ( G_DObjGetWorldTagMatrix(ent, tag, tagMat) )
             {
-                memset(&trace, 0, 16);
+                trace_t trace; // [esp+4Ch] [ebp-84h] BYREF
                 vCenter[0] = (float)(ent->r.mins[0] + ent->r.maxs[0]) * 0.5;
                 vCenter[1] = (float)(ent->r.mins[1] + ent->r.maxs[1]) * 0.5;
                 vCenter[2] = (float)(ent->r.mins[2] + ent->r.maxs[2]) * 0.5;
@@ -1286,7 +1284,6 @@ void __cdecl FinishSpawningItem(gentity_s *ent)
     int clipMask; // [esp+100h] [ebp-4h]
     int savedregs; // [esp+104h] [ebp+0h] BYREF
 
-    memset(&tr, 0, 16);
     //col_context_t::col_context_t(&context);
     ent->handler = 21;
     if ((ent->spawnflags & 1) != 0)
@@ -1712,7 +1709,6 @@ void __cdecl G_RunItem(gentity_s *ent)
     float dot; // [esp+100h] [ebp-4h]
     int savedregs; // [esp+104h] [ebp+0h] BYREF
 
-    memset(&tr, 0, 16);
     if ( ent->s.eType == 2
         && !Assert_MyHandler(
                     "C:\\projects_pc\\cod\\codsrc\\src\\game\\g_items.cpp",

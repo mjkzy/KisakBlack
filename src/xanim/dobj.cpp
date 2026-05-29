@@ -1517,7 +1517,6 @@ void __cdecl DObjGeomTraceline(DObj *obj, float *localStart, float *localEnd, in
 
     PROF_SCOPED("geomtraceline");
 
-    memset(&trace, 0, 16);
     results->modelIndex = 0;
     results->partName = 0;
     results->partGroup = 0;

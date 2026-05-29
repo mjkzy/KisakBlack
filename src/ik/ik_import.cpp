@@ -1312,7 +1312,6 @@ bool __cdecl IKImport_TraceBox(
     trace_t tr; // [esp+40h] [ebp-40h] BYREF
     IKCollisionCache *collCache; // [esp+7Ch] [ebp-4h]
 
-    memset(&tr, 0, 16);
     ////col_context_t::col_context_t(&context);
     // 
     PROF_SCOPED("IK Trace");

@@ -1128,7 +1128,6 @@ bool __cdecl VEH_SlideMove(gentity_s *ent, int gravity)
 
     veh = ent->scr_vehicle;
     phys = &veh->phys;
-    memset(&trace, 0, 16);
     timeLeft = 0.05f;
     endVel[0] = veh->phys.vel[0];
     endVel[1] = veh->phys.vel[1];
@@ -1315,7 +1314,6 @@ void __cdecl VEH_StepSlideMove(gentity_s *ent, int gravity)
 
     veh = ent->scr_vehicle;
     phys = &veh->phys;
-    memset(&trace, 0, 16);
     //col_context_t::col_context_t(&context);
     startOrigin[0] = phys->origin[0];
     startOrigin[1] = phys->origin[1];
@@ -2399,7 +2397,6 @@ char __cdecl VEH_ExitPosOkay(gentity_s *vehEnt, gentity_s *player, int exitIndex
     float safeVehicleOrigin[3]; // [esp+D8h] [ebp-18h] BYREF
     float exitPoint[3]; // [esp+E4h] [ebp-Ch] BYREF
 
-    memset(&traceResults, 0, 16);
     //col_context_t::col_context_t(&context);
     if ( vehEnt->scr_vehicle->boneIndex.entryPoints[exitIndex] < 0 )
         return 0;
@@ -4503,7 +4500,6 @@ void __cdecl VEH_GroundPlant(gentity_s *ent, vehicle_physic_t *phys, int gravity
     float axis[4][3]; // [esp+30Ch] [ebp-34h] BYREF
     float dot; // [esp+33Ch] [ebp-4h]
 
-    memset(&trace, 0, 16);
     //col_context_t::col_context_t(&context);
     if ( !ent && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\game\\g_scr_vehicle.cpp", 1984, 0, "%s", "ent") )
         __debugbreak();
@@ -5364,7 +5360,6 @@ void __cdecl VEH_MoveTrace(gentity_s *ent)
     trace_t trace; // [esp+58h] [ebp-48h] BYREF
     float maxs[3]; // [esp+94h] [ebp-Ch] BYREF
 
-    memset(&trace, 0, 16);
     if ( Scr_IsSystemActive(1u, SCRIPTINSTANCE_SERVER) )
     {
         phys = &ent->scr_vehicle->phys;
@@ -6254,7 +6249,6 @@ void __cdecl VEH_UpdateDriverWeapons(gentity_s *ent)
     player = 0;
     client = 0;
     info = BG_GetVehicleInfo(veh->infoIdx);
-    memset(&trace, 0, 16);
     weapVariantDef = 0;
     weapDef = 0;
     VEH_UpdateDriverActions(ent);
@@ -6577,7 +6571,6 @@ void __cdecl VEH_GroundTrace(gentity_s *ent)
 
     veh = ent->scr_vehicle;
     phys = &veh->phys;
-    memset(&trace, 0, 16);
     //col_context_t::col_context_t(&context);
     start[0] = phys->origin[0];
     start[1] = phys->origin[1];

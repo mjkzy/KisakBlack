@@ -3486,7 +3486,6 @@ bool __fastcall Path_PredictionTrace(
 
     PROF_SCOPED("pathpredictiontrace");
 
-    memset(&trace, 0, 16);
     traceMin[0] = PREDICTION_TRACE_MIN[0];
     traceMin[1] = PREDICTION_TRACE_MIN[1];
     traceMin[2] = stepheight + 0.0;

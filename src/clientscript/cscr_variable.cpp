@@ -6811,28 +6811,10 @@ void __cdecl CopyEntity(scriptInstance_t inst, unsigned int parentId, unsigned i
     int type; // [esp+60h] [ebp-8h]
     unsigned int id; // [esp+64h] [ebp-4h]
 
-    if ( !parentId
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\clientscript\\cscr_variable.cpp",
-                    4654,
-                    0,
-                    "%s",
-                    "parentId") )
-    {
-        __debugbreak();
-    }
-    if ( !newParentId
-        && !Assert_MyHandler(
-                    "C:\\projects_pc\\cod\\codsrc\\src\\clientscript\\cscr_variable.cpp",
-                    4655,
-                    0,
-                    "%s",
-                    "newParentId") )
-    {
-        __debugbreak();
-    }
+    iassert(parentId);
+    iassert(newParentId);
 
-    parentValue = &gScrVarGlob[inst].variableList[parentId + 1];
+    parentValue = &gScrVarGlob[inst].variableList[parentId + VARIABLELIST_PARENT_BEGIN];
 
     if ( (parentValue->w.status & 0x60) != 0x60
         && !Assert_MyHandler(

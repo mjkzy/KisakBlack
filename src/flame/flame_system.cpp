@@ -1785,7 +1785,6 @@ void __cdecl CG_Flame_Update_Source(int localClientNum)
     int time; // [esp+Ch] [ebp-208h]
     float dir[3]; // [esp+34h] [ebp-1E0h] BYREF
     float start[3]; // [esp+40h] [ebp-1D4h] BYREF
-    trace_t trace; // [esp+4Ch] [ebp-1C8h] BYREF
     flameSource_t *source; // [esp+88h] [ebp-18Ch]
     const clientInfo_t *ci; // [esp+8Ch] [ebp-188h]
     const centity_s *player; // [esp+90h] [ebp-184h]
@@ -2005,7 +2004,7 @@ LABEL_25:
                                     source->firingThroughGeo = 0;
                                     if ( isFiring && !isFirstPerson )
                                     {
-                                        memset(&trace, 0, 16);
+                                        trace_t trace; // [esp+4Ch] [ebp-1C8h] BYREF
                                         AngleVectors(flameWeaponConfig.angle, dir, 0, 0);
                                         start[0] = (float)(-23.0 * dir[0]) + flameWeaponConfig.origin[0];
                                         start[1] = (float)(-23.0 * dir[1]) + flameWeaponConfig.origin[1];
